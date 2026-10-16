@@ -1,10 +1,14 @@
 name: Auto Publish BD Job Circulars to Blogger
 
 on:
+  push:
+    paths:
+      - '.github/workflows/auto_post.yml'
+      - 'auto_job_blogger.py'
+      - 'banner_generator.py'
   schedule:
-    # প্রতিদিন ৪ ঘণ্টা পর পর অটোমেটিক রান হবে
-        - cron: '25 */2 * * *'
-  workflow_dispatch: # যেকোনো সময় ১ ক্লিকে ম্যানুয়ালি রান করার অপশন
+    - cron: '12,42 * * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -23,6 +27,26 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Sync Already Published Jobs
+        run: |
+          python3 -c '
+          import json, os
+          f = "posted_jobs.json"
+          data = json.load(open(f)) if os.path.exists(f) else []
+          for u in [
+              "https://bdgovtjob.net/bpatc-job-circular/",
+              "https://bdgovtjob.net/saptahik-chakrir-khobor/",
+              "https://bdgovtjob.net/bangladesh-krira-shikkha-protishtan-bksp-job-circular/",
+              "https://bdgovtjob.net/rajshahi-university-job-circular/",
+              "https://bdgovtjob.net/nstu-job-circular/",
+              "https://bdgovtjob.net/meherpur-university-job-circular/",
+              "https://bdgovtjob.net/ad-din-foundation-job-circular/"
+          ]:
+              if u not in data:
+                  data.append(u)
+          json.dump(data, open(f, "w"), indent=2)
+          '
+
       - name: Run Auto Job Circular Scraper & Blogger Publisher
         env:
           BLOGGER_BLOG_ID: "3244474783562745180"
@@ -31,7 +55,7 @@ jobs:
           BLOGGER_REFRESH_TOKEN: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           BLOGGER_IS_DRAFT: "false"
-          MAX_POSTS_PER_RUN: "2"
+          MAX_POSTS_PER_RUN: "1"
         run: |
           python3 auto_job_blogger.py
 
@@ -40,4 +64,4 @@ jobs:
           git config user.name "bdedujob-bot"
           git config user.email "bot@bdedujob.blogspot.com"
           git add posted_jobs.json generated_banners/ 2>/dev/null || true
-          git diff --staged --quiet || (git commit -m "chore: update posted jobs and banners" && git push)
+          git diff --staged --quiet || (git commit -m "chore: update posted jobs and banners [skip ci]" && git push)
