@@ -249,20 +249,28 @@ Source Title: {raw_title}
 Source Text:
 {raw_text[:4500]}
 """
-            api_url = (
-                f"https://generativelanguage.googleapis.com/v1beta/models/"
-                f"gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
-            )
             payload = json.dumps({
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {"responseMimeType": "application/json"},
             }).encode("utf-8")
-            req = urllib.request.Request(api_url, data=payload, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=25) as resp:
-                result = json.loads(resp.read().decode("utf-8"))
-            ai_text = result["candidates"][0]["content"]["parts"][0]["text"]
-            ai_data = json.loads(ai_text)
-            info.update({k: v for k, v in ai_data.items() if v})
+            ai_data = None
+            for model_name in ["gemini-flash-lite-latest", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"]:
+                try:
+                    api_url = (
+                        f"https://generativelanguage.googleapis.com/v1beta/models/"
+                        f"{model_name}:generateContent?key={GEMINI_API_KEY}"
+                    )
+                    req = urllib.request.Request(api_url, data=payload, headers={"Content-Type": "application/json"})
+                    with urllib.request.urlopen(req, timeout=25) as resp:
+                        result = json.loads(resp.read().decode("utf-8"))
+                    ai_text = result["candidates"][0]["content"]["parts"][0]["text"]
+                    ai_data = json.loads(ai_text)
+                    print(f"[AI] Successfully rewrote job circular using {model_name}!")
+                    break
+                except Exception as model_err:
+                    print(f"[WARN] Model {model_name} failed ({model_err}), trying next...")
+            if ai_data:
+                info.update({k: v for k, v in ai_data.items() if v})
         except Exception as e:
             print(f"[WARN] Gemini AI fallback triggered: {e}")
 
@@ -288,6 +296,7 @@ def create_and_upload_banner(info: dict) -> str:
         output_path=local_path,
     )
 
+    # ১. যদি IMGBB_API_KEY দেওয়া থাকে
     if IMGBB_API_KEY:
         try:
             with open(local_path, "rb") as f:
@@ -298,9 +307,29 @@ def create_and_upload_banner(info: dict) -> str:
                 res_json = json.loads(resp.read().decode("utf-8"))
                 return res_json["data"]["url"]
         except Exception as e:
-            print(f"[WARN] ImgBB upload failed, using fallback image: {e}")
+            print(f"[WARN] ImgBB upload failed, trying FreeImage.host: {e}")
 
-    # GitHub Actions এ রান হলে অটোমেটিক GitHub CDN লিংক তৈরি করবে (কোনো আলাদা ইমেজ API লাগবে না!)
+    # ২. বিল্ট-ইন ফ্রি ইমেজ CDN হোস্টিং (FreeImage.host / iili.io - কোনো আলাদা API Key লাগবে না!)
+    try:
+        with open(local_path, "rb") as f:
+            b64_img = base64.b64encode(f.read()).decode("utf-8")
+        data = urllib.parse.urlencode({
+            "key": "6d207e02198a847aa98d0a2a901485a5",
+            "action": "upload",
+            "source": b64_img,
+            "format": "json",
+        }).encode("utf-8")
+        req = urllib.request.Request("https://freeimage.host/api/1/upload", data=data, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            res_json = json.loads(resp.read().decode("utf-8"))
+            cdn_url = res_json.get("image", {}).get("url")
+            if cdn_url:
+                print(f"[BANNER] Uploaded custom banner to CDN: {cdn_url}")
+                return cdn_url
+    except Exception as e:
+        print(f"[WARN] FreeImage upload failed, using GitHub fallback: {e}")
+
+    # ৩. GitHub Actions এ রান হলে অটোমেটিক GitHub CDN লিংক তৈরি করবে
     gh_repo = os.getenv("GITHUB_REPOSITORY", "")
     gh_branch = os.getenv("GITHUB_REF_NAME", "main")
     if gh_repo:
