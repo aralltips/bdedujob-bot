@@ -108,26 +108,6 @@ JOB_SOURCES = [
         "feed_url": "https://ejobscircular.com/feed/",
         "default_label": "Govt Jobs",
     },
-    {
-        "name": "KF Planet (Exam Routine)",
-        "feed_url": "https://kfplanet.com/category/education-bd/exam-routine/feed/",
-        "default_label": "Exam Routine",
-    },
-    {
-        "name": "KF Planet (Exam Result)",
-        "feed_url": "https://kfplanet.com/category/education-bd/exam-result/feed/",
-        "default_label": "Result",
-    },
-    {
-        "name": "KF Planet (Education & Admission)",
-        "feed_url": "https://kfplanet.com/category/education-bd/admission-info/feed/",
-        "default_label": "Edcation",
-    },
-    {
-        "name": "KF Planet (All Jobs)",
-        "feed_url": "https://kfplanet.com/category/jobs-bd/feed/",
-        "default_label": "All Jobs",
-    },
 ]
 
 HEADERS = {
@@ -449,15 +429,28 @@ def extract_structured_job_info(raw_title: str, scraped: dict) -> dict:
     is_govt = "সরকারি" in job_type_raw and "বেসরকারি" not in job_type_raw
     is_teletalk = bool(scraped["teletalk_url"]) or ("16222" in raw_text and "টেলিটক" in raw_text)
 
-    vacancy_bn = kv.get("মোট শূন্যপদ") or kv.get("পদের ক্যাটাগরি") or "বিজ্ঞপ্তিতে দেখুন"
-    qualification_bn = kv.get("শিক্ষাগত যোগ্যতা", "বিজ্ঞপ্তিতে দেখুন")
-    age_limit_bn = kv.get("বয়সসীমা", "বিজ্ঞপ্তিতে দেখুন")
-    salary_bn = kv.get("বেতন ও সুযোগ-সুবিধা", "বিজ্ঞপ্তিতে দেখুন")
-    location_bn = kv.get("জব লোকেশন") or kv.get("প্রধান কার্যালয়ের ঠিকানা") or "বাংলাদেশের যেকোনো স্থান (বিজ্ঞপ্তি অনুযায়ী)"
-    start_date_bn = kv.get("আবেদনের শুরু") or kv.get("বিজ্ঞপ্তি প্রকাশের তারিখ") or "চলমান"
-    deadline_bn = kv.get("আবেদনের শেষ তারিখ") or kv.get("আবেদনের শেষ সময়ঃ") or "বিজ্ঞপ্তিতে দেখুন"
-    apply_method_bn = kv.get("আবেদন পদ্ধতি") or kv.get("আবেদনের পদ্ধতিঃ") or ("টেলিটক অনলাইন" if is_teletalk else "বিজ্ঞপ্তির নির্দেশনা অনুযায়ী")
+    vacancy_bn = kv.get("মোট উত্তীর্ণ প্রার্থী") or kv.get("মোট শূন্যপদ") or kv.get("পদের ক্যাটাগরি") or "অফিশিয়াল নোটিশ দেখুন"
+    qualification_bn = kv.get("পদের নাম") or kv.get("শিক্ষাগত যোগ্যতা") or "অফিশিয়াল নোটিশ দেখুন"
+    age_limit_bn = kv.get("স্মারক নম্বর") or kv.get("বয়সসীমা") or "অফিশিয়াল নোটিশ দেখুন"
+    salary_bn = kv.get("ফলাফলের ধরন") or kv.get("বেতন ও সুযোগ-সুবিধা") or "অফিশিয়াল নোটিশ অনুযায়ী"
+    location_bn = kv.get("ব্যবহারিক / পরবর্তী পরীক্ষার কেন্দ্র") or kv.get("জব লোকেশন") or kv.get("প্রধান কার্যালয়ের ঠিকানা") or "অফিশিয়াল নোটিশ অনুযায়ী"
+    start_date_bn = kv.get("নোটিশ প্রকাশের তারিখ") or kv.get("আবেদনের শুরু") or kv.get("বিজ্ঞপ্তি প্রকাশের তারিখ") or "চলমান"
+    deadline_bn = kv.get("ব্যবহারিক / পরবর্তী পরীক্ষার তারিখ") or kv.get("আবেদনের শেষ তারিখ") or kv.get("আবেদনের শেষ সময়ঃ") or "অফিশিয়াল নোটিশ দেখুন"
+    apply_method_bn = kv.get("আবেদন পদ্ধতি") or kv.get("আবেদনের পদ্ধতিঃ") or ("টেলিটক অনলাইন" if is_teletalk else "অফিশিয়াল নোটিশের নির্দেশনা অনুযায়ী")
     apply_email = emails[0] if emails else kv.get("ই-মেইল", "")
+    org_name_en_fallback = kv.get("প্রতিষ্ঠানের ইংরেজি নাম") or title_en.replace("Job Circular 2026", "").replace("Job Circular 2025", "").strip() or org_name_bn
+
+    is_res_fallback = any(k in (raw_title + kv.get("নোটিশের ধরন", "") + kv.get("ফলাফলের ধরন", "")) for k in ["ফলাফল", "রেজাল্ট", "Result"])
+    is_rout_fallback = any(k in (raw_title + kv.get("নোটিশের ধরন", "")) for k in ["সময়সূচি", "সময়সূচি", "রুটিন", "Routine"])
+
+    if is_res_fallback:
+        fallback_post_title = f"{org_name_bn} পরীক্ষার ফলাফল ২০২৬ - {org_name_en_fallback} Exam Result 2026"
+        job_type_raw = "পরীক্ষার ফলাফল (Exam Result)"
+    elif is_rout_fallback:
+        fallback_post_title = f"{org_name_bn} পরীক্ষার সময়সূচি ২০২৬ - {org_name_en_fallback} Exam Routine 2026"
+        job_type_raw = "পরীক্ষার রুটিন ও সময়সূচি (Exam Routine)"
+    else:
+        fallback_post_title = f"{org_name_bn} নিয়োগ বিজ্ঞপ্তি ২০২৬ - {title_en}"
 
     official_site = scraped["official_site"]
     if official_site and not official_site.startswith("http"):
@@ -507,9 +500,9 @@ def extract_structured_job_info(raw_title: str, scraped: dict) -> dict:
     ]
 
     info = {
-        "post_title": f"{org_name_bn} নিয়োগ বিজ্ঞপ্তি ২০২৬ - {title_en}",
+        "post_title": fallback_post_title,
         "org_name_bn": org_name_bn,
-        "org_name_en": title_en.replace("Job Circular 2026", "").replace("Job Circular 2025", "").strip() or org_name_bn,
+        "org_name_en": org_name_en_fallback,
         "short_code": short_code,
         "job_type_bn": job_type_raw,
         "is_govt": is_govt,
@@ -813,6 +806,139 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
         else ""
     )
 
+    combined_type_check = f"{title_full} {info.get('job_type_bn', '')}".lower()
+    is_notice_or_result = any(
+        k in combined_type_check
+        for k in ["ফলাফল", "রেজাল্ট", "result", "সময়সূচি", "সময়সূচি", "রুটিন", "routine", "কেন্দ্র তালিকা", "প্রবেশপত্র"]
+    )
+
+    if is_notice_or_result:
+        notice_label_bn = "পরীক্ষার ফলাফল" if any(k in combined_type_check for k in ["ফলাফল", "রেজাল্ট", "result"]) else "পরীক্ষার সময়সূচি ও রুটিন"
+        notice_rows_html = ""
+        for idx, p in enumerate(info.get("posts_breakdown", []), start=1):
+            notice_rows_html += f"""
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 10px; text-align: center;">{idx}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 10px; font-weight: bold;">{p.get('post_name', '')}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 10px; text-align: center;">{p.get('vacancy', '')}</td>
+          <td style="border: 1px solid #cbd5e1; padding: 10px;">{p.get('qualification', '')} — {p.get('salary', '')}</td>
+        </tr>"""
+
+        notice_btn_href = pdf_links[0] if pdf_links else (apply_url if apply_url.startswith("http") else SITE_URL)
+        html = f"""<div class="post-body entry-content" style="font-size: 16px; line-height: 1.75; color: #1e293b;">
+  <!-- ১. অটো-জেনারেটেড থাম্বনেইল ব্যানার ইমেজ -->
+  <div class="separator" style="clear: both; text-align: center; margin-bottom: 20px;">
+    <a href="{banner_url}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;">
+      <img alt="{title_full}" title="{title_full}" border="0" data-original-height="630" data-original-width="1200" loading="lazy" src="{banner_url}" style="max-width: 100%; height: auto; border-radius: 8px;" />
+    </a>
+  </div>
+
+  <!-- ২. ভূমিকা -->
+  <p style="text-align: justify;">
+    <span style="color: #38761d;"><b>{org_en} Official Notice 2026:</b></span>
+    {info['intro_paragraph_1']}
+  </p>
+
+  <p style="text-align: justify;">
+    {info['intro_paragraph_2']}
+  </p>
+
+  <!-- ৩. অফিসিয়াল অ্যাপ ও ওয়েবসাইট প্রমোশন বক্স -->
+  <div style="background: #f0fdf4; border-left: 4px solid #38761d; padding: 14px 18px; margin: 18px 0; border-radius: 6px; text-align: center;">
+    <p style="margin: 0 0 8px 0; font-weight: bold;">
+      <a href="{PLAY_STORE_URL}" rel="nofollow noopener" target="_blank" style="color: #15803d; text-decoration: underline;">
+        📱 একটি নোটিশ বা ফলাফলও মিস হবে না! আমাদের অফিসিয়াল অ্যাপটি ডাউনলোড করে নিন।
+      </a>
+    </p>
+    <p style="margin: 0; text-align: justify; font-size: 15px;">
+      সরকারি ও বেসরকারি সব ধরনের চাকরির খবর, পরীক্ষার রুটিন ও ফলাফল সবার আগে পেতে ভিজিট করুন আমাদের ওয়েবসাইটে
+      <a href="{SITE_URL}" style="color: #38761d; font-weight: bold;">{SITE_DISPLAY}</a>
+      এবং <a href="{PLAY_STORE_URL}" rel="nofollow noopener" target="_blank" style="color: #38761d; font-weight: bold;">প্লে-স্টোর লিংক</a>
+      থেকে আমাদের অফিসিয়াল অ্যাপটি ইনস্টল করে রাখুন।
+    </p>
+  </div>
+
+  <!-- ৪. এক নজরে নোটিশ / ফলাফলের সারসংক্ষেপ -->
+  <h2 style="text-align: center; color: #38761d; font-size: 22px; border-bottom: 2px solid #38761d; padding-bottom: 6px; margin-top: 26px;">
+    এক নজরে {org_bn} {notice_label_bn} ২০২৬ (Notice Summary)
+  </h2>
+
+  <ul style="line-height: 1.9;">
+    <li><b>প্রতিষ্ঠানের নাম (Organization Name):</b> {org_bn} ({org_en})</li>
+    <li><b>নোটিশের ধরন (Notice Category):</b> {info['job_type_bn']}</li>
+    <li><b>পদের নাম / পরীক্ষার বিষয় (Post / Exam):</b> {info['qualification_bn']}</li>
+    <li><b>প্রার্থী / উত্তীর্ণ সংখ্যা (Candidates Count):</b> {info['vacancy_bn']}</li>
+    <li><b>পরীক্ষার কেন্দ্র / স্থান (Exam Venue):</b> {info.get('location_bn', 'অফিশিয়াল নোটিশ অনুযায়ী')}</li>
+    <li><b>নোটিশ প্রকাশের তারিখ (Publish Date):</b> {info['start_date_bn']}</li>
+    <li><b>পরীক্ষার তারিখ ও সময়সূচি (Exam Date &amp; Time):</b> <span style="color: #dc2626; font-weight: bold;">{info['deadline_bn']}</span></li>
+    <li><b>অফিসিয়াল ওয়েবসাইট (Official Website):</b> <span style="color: #0000ee;"><b><u>{official_site}</u></b></span></li>
+  </ul>
+
+  <!-- ৫. পদভিত্তিক সময়সূচি ও ফলাফলের বিবরণ ছক -->
+  <h2 style="text-align: center; color: #38761d; font-size: 21px; margin-top: 28px;">
+    {org_bn} {notice_label_bn} ২০২৬: পদভিত্তিক বিস্তারিত তথ্য
+  </h2>
+  <p style="text-align: justify;">
+    {org_bn}-এর প্রকাশিত অফিশিয়াল নোটিশ অনুযায়ী পদভিত্তিক সময়সূচি, উত্তীর্ণ প্রার্থীদের তথ্য ও গুরুত্বপূর্ণ বিবরণ নিচের ছকে তুলে ধরা হলো:
+  </p>
+
+  <div style="overflow-x: auto; margin: 16px 0;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+      <thead>
+        <tr style="background-color: #38761d; color: #ffffff;">
+          <th style="border: 1px solid #cbd5e1; padding: 10px;">ক্রমিক</th>
+          <th style="border: 1px solid #cbd5e1; padding: 10px;">পদের নাম / বিষয়</th>
+          <th style="border: 1px solid #cbd5e1; padding: 10px;">প্রার্থী সংখ্যা / পদ</th>
+          <th style="border: 1px solid #cbd5e1; padding: 10px;">সময়সূচি, কেন্দ্র ও বিস্তারিত নির্দেশনা</th>
+        </tr>
+      </thead>
+      <tbody>
+        {notice_rows_html}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ৬. অফিশিয়াল নোটিশ ইমেজ ও PDF -->
+  <h3 style="color: #38761d; font-size: 19px; margin-top: 24px;">
+    বিস্তারিত রোল নম্বর ও সময়সূচি দেখতে অফিশিয়াল নোটিশ (Official Notice / PDF) দেখুন:
+  </h3>
+
+  {notice_imgs_html}
+
+  <div style="text-align: center; margin: 26px 0;">
+    <a href="{notice_btn_href}" rel="nofollow noopener" target="_blank" style="display: inline-block; background-color: #38761d; color: #ffffff; font-size: 20px; font-weight: bold; padding: 12px 34px; border-radius: 30px; text-decoration: none; box-shadow: 0 4px 10px rgba(56,118,29,0.3);">
+      📥 অফিশিয়াল ফলাফল ও নোটিশ ডাউনলোড করুন (Official Notice)
+    </a>
+  </div>
+
+  <!-- ৭. ফলাফল দেখার নিয়ম ও পরীক্ষার্থীদের জন্য নির্দেশনা -->
+  <h2 style="text-align: center; color: #38761d; font-size: 21px; margin-top: 28px;">
+    পরীক্ষার্থীদের জন্য জরুরি নির্দেশনা ও করণীয়
+  </h2>
+  <ul style="line-height: 1.85;">
+    {steps_li_html}
+  </ul>
+
+  <!-- ৮. সচরাচর জিজ্ঞাসিত প্রশ্নোত্তর (FAQ) -->
+  <h2 style="text-align: center; color: #38761d; font-size: 21px; margin-top: 28px;">
+    সচরাচর জিজ্ঞাসিত প্রশ্নোত্তর (FAQ)
+  </h2>
+  <p style="text-align: justify;">
+    <b>প্রশ্ন ১: {org_bn}-এর {notice_label_bn} কোথায় পাওয়া যাবে?</b><br/>
+    উত্তর: প্রার্থীরা অফিশিয়াল ওয়েবসাইট (<b>{official_site}</b>) এবং আমাদের এই পোস্টে সংযুক্ত অফিশিয়াল নোটিশ/PDF থেকে বিস্তারিত দেখতে ও ডাউনলোড করতে পারবেন।
+  </p>
+  <p style="text-align: justify;">
+    <b>প্রশ্ন ২: পরবর্তী পরীক্ষা বা ভাইভা কবে অনুষ্ঠিত হবে?</b><br/>
+    উত্তর: প্রকাশিত নোটিশ অনুযায়ী নির্ধারিত তারিখ ও সময়: <b>{info['deadline_bn']}</b>।
+  </p>
+
+  <p style="text-align: justify; margin-top: 18px; font-size: 14px; color: #475569;">
+    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>
+    <i>{title_full}, {org_bn} {notice_label_bn} ২০২৬, {org_en} Result Routine 2026, exam result 2026, exam routine 2026, bdedujob.</i>
+  </p>
+</div>"""
+        return html
+
     html = f"""<div class="post-body entry-content" style="font-size: 16px; line-height: 1.75; color: #1e293b;">
   <!-- ১. অটো-জেনারেটেড থাম্বনেইল ব্যানার ইমেজ -->
   <div class="separator" style="clear: both; text-align: center; margin-bottom: 20px;">
@@ -1038,6 +1164,11 @@ def main():
             print(f"[NEW JOB FOUND] {item['title']} -> {link}")
             try:
                 scraped = scrape_job_details(link)
+                if not scraped["notice_images"] and not scraped.get("pdf_links"):
+                    print(f"[SKIP] No official circular image or PDF found in {link}")
+                    save_posted_job(link)
+                    posted_urls.append(link)
+                    continue
                 info = extract_structured_job_info(item["title"], scraped)
                 banner_url = create_and_upload_banner(info)
                 html_post = build_bdedujob_post_html(
