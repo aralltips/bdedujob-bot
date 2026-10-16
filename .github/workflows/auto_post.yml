@@ -1,0 +1,43 @@
+name: Auto Publish BD Job Circulars to Blogger
+
+on:
+  schedule:
+    # প্রতিদিন ৪ ঘণ্টা পর পর অটোমেটিক রান হবে
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # যেকোনো সময় ১ ক্লিকে ম্যানুয়ালি রান করার অপশন
+
+permissions:
+  contents: write
+
+jobs:
+  auto-post-jobs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python & HarfBuzz/Raqm for Bangla Banner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libharfbuzz-dev libfribidi-dev libraqm-dev
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Auto Job Circular Scraper & Blogger Publisher
+        env:
+          BLOGGER_BLOG_ID: "3244474783562745180"
+          BLOGGER_CLIENT_ID: ${{ secrets.BLOGGER_CLIENT_ID }}
+          BLOGGER_CLIENT_SECRET: ${{ secrets.BLOGGER_CLIENT_SECRET }}
+          BLOGGER_REFRESH_TOKEN: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BLOGGER_IS_DRAFT: "false"
+          MAX_POSTS_PER_RUN: "2"
+        run: |
+          python3 auto_job_blogger.py
+
+      - name: Save Posted Jobs & Generated Banners
+        run: |
+          git config user.name "bdedujob-bot"
+          git config user.email "bot@bdedujob.blogspot.com"
+          git add posted_jobs.json generated_banners/ 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "chore: update posted jobs and banners" && git push)
