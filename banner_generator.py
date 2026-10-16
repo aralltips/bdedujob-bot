@@ -4,7 +4,7 @@
 Auto Thumbnail / Banner Generator for bdedujob.blogspot.com
 Uses the exact official template style requested by the user:
 - Saptahik Chakrir Khobor template (templates/saptahik_template_base.jpg)
-- Govt/Private Job Circular template with BD Govt Emblem & Red 'নিয়োগ বিজ্ঞপ্তি' (templates/job_template_base.jpg)
+- Govt/Private/Bank/Result/Routine template with BD Govt Emblem (templates/job_template_base.jpg)
 """
 
 import os
@@ -21,6 +21,7 @@ JOB_TEMPLATE_URL = "https://iili.io/njCwnWX.jpg"
 SAPTAHIK_TEMPLATE_URL = "https://iili.io/njCwcX9.jpg"
 
 DARK_GREEN = (8, 81, 51)  # Exact RGB from reference banner (#085133)
+BRIGHT_RED = (237, 28, 36)  # Exact RGB of red subtitle (#ED1C24)
 
 
 def _ensure_templates():
@@ -43,13 +44,19 @@ def _load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
 
 
 def _clean_org_name_bn(name: str) -> str:
-    cleaned = re.sub(r"\([A-Za-z0-9\s\-_]+\)", "", name)
-    cleaned = re.sub(r"নিয়োগ বিজ্ঞপ্তি.*|নিয়োগ বিজ্ঞপ্তি.*", "", cleaned)
+    """Removes English brackets or redundant words so the Bangla title looks clean like the reference."""
+    cleaned = re.sub(r"\([A-Za-z0-9\s\-_,\.]+\)", "", name)
+    cleaned = re.sub(
+        r"নিয়োগ বিজ্ঞপ্তি.*|নিয়োগ বিজ্ঞপ্তি.*|লিখিত পরীক্ষার ফলাফল.*|পরীক্ষার ফলাফল.*|পরীক্ষার সময়সূচি.*|ভর্তি বিজ্ঞপ্তি.*",
+        "",
+        cleaned,
+    )
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" -–|")
     return cleaned or name
 
 
 def _split_balanced_two_lines(text: str, draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, max_width: int):
+    """Splits Bangla organization name into 1 or 2 visually balanced lines."""
     words = text.split()
     if not words:
         return [text]
@@ -99,6 +106,9 @@ def generate_job_banner(
     job_type_bn: str = "সরকারি চাকরি",
     output_path: str = "job_banner.png",
 ) -> str:
+    """
+    Generates a 2048x1152 banner matching the exact reference design.
+    """
     _ensure_templates()
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
@@ -110,6 +120,28 @@ def generate_job_banner(
 
     img = Image.open(TEMPLATE_JOB).convert("RGB")
     draw = ImageDraw.Draw(img)
+
+    # Determine if red subtitle should change for Exam Result / Exam Routine / Admission
+    custom_red_subtitle = None
+    if any(k in combined_check for k in ["ফলাফল", "রেজাল্ট", "result"]):
+        custom_red_subtitle = "পরীক্ষার ফলাফল"
+    elif any(k in combined_check for k in ["সময়সূচি", "সময়সূচি", "রুটিন", "routine", "প্রবেশপত্র", "admit card"]):
+        custom_red_subtitle = "পরীক্ষার সময়সূচি"
+    elif any(k in combined_check for k in ["ভর্তি বিজ্ঞপ্তি", "admission"]):
+        custom_red_subtitle = "ভর্তি বিজ্ঞপ্তি"
+
+    if custom_red_subtitle:
+        draw.rectangle([240, 598, 1130, 725], fill=(255, 255, 255))
+        font_red = _load_font(FONT_BOLD, 108)
+        draw.text(
+            (684, 662),
+            custom_red_subtitle,
+            font=font_red,
+            fill=BRIGHT_RED,
+            anchor="mm",
+            stroke_width=1,
+            stroke_fill=BRIGHT_RED,
+        )
 
     clean_name = _clean_org_name_bn(org_name_bn)
 
@@ -167,3 +199,11 @@ def generate_job_banner(
 
     img.save(output_path, format="PNG", optimize=True)
     return output_path
+
+
+if __name__ == "__main__":
+    out1 = generate_job_banner(
+        org_name_bn="বাংলাদেশ লোক-প্রশাসন প্রশিক্ষণ কেন্দ্র (BPATC)",
+        output_path=os.path.join(BASE_DIR, "sample_banner.png"),
+    )
+    print("Generated job banner:", out1)
