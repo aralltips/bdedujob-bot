@@ -2,17 +2,38 @@
 # -*- coding: utf-8 -*-
 """
 Auto Thumbnail / Banner Generator for bdedujob.blogspot.com
-Automatically designs a 1200x630 SEO & Social-Share friendly job circular banner
-in Bangla & English using Pillow (with HarfBuzz/Raqm complex script support).
+Uses the exact official template style requested by the user:
+- Saptahik Chakrir Khobor template (templates/saptahik_template_base.jpg)
+- Govt/Private Job Circular template with BD Govt Emblem & Red 'নিয়োগ বিজ্ঞপ্তি' (templates/job_template_base.jpg)
 """
 
 import os
+import re
+import urllib.request
 from PIL import Image, ImageDraw, ImageFont
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_BOLD = os.path.join(BASE_DIR, "fonts", "HindSiliguri-Bold.ttf")
-FONT_SEMIBOLD = os.path.join(BASE_DIR, "fonts", "HindSiliguri-SemiBold.ttf")
-FONT_REGULAR = os.path.join(BASE_DIR, "fonts", "HindSiliguri-Regular.ttf")
+TEMPLATE_JOB = os.path.join(BASE_DIR, "templates", "job_template_base.jpg")
+TEMPLATE_SAPTAHIK = os.path.join(BASE_DIR, "templates", "saptahik_template_base.jpg")
+
+JOB_TEMPLATE_URL = "https://iili.io/njCwnWX.jpg"
+SAPTAHIK_TEMPLATE_URL = "https://iili.io/njCwcX9.jpg"
+
+DARK_GREEN = (8, 81, 51)  # Exact RGB from reference banner (#085133)
+
+
+def _ensure_templates():
+    os.makedirs(os.path.join(BASE_DIR, "templates"), exist_ok=True)
+    headers = {"User-Agent": "Mozilla/5.0"}
+    if not os.path.exists(TEMPLATE_JOB):
+        req = urllib.request.Request(JOB_TEMPLATE_URL, headers=headers)
+        with urllib.request.urlopen(req, timeout=20) as r, open(TEMPLATE_JOB, "wb") as f:
+            f.write(r.read())
+    if not os.path.exists(TEMPLATE_SAPTAHIK):
+        req = urllib.request.Request(SAPTAHIK_TEMPLATE_URL, headers=headers)
+        with urllib.request.urlopen(req, timeout=20) as r, open(TEMPLATE_SAPTAHIK, "wb") as f:
+            f.write(r.read())
 
 
 def _load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
@@ -21,153 +42,128 @@ def _load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.load_default()
 
 
-def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_width: int):
+def _clean_org_name_bn(name: str) -> str:
+    cleaned = re.sub(r"\([A-Za-z0-9\s\-_]+\)", "", name)
+    cleaned = re.sub(r"নিয়োগ বিজ্ঞপ্তি.*|নিয়োগ বিজ্ঞপ্তি.*", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -–|")
+    return cleaned or name
+
+
+def _split_balanced_two_lines(text: str, draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, max_width: int):
     words = text.split()
+    if not words:
+        return [text]
+
+    full_bbox = draw.textbbox((0, 0), text, font=font, stroke_width=2)
+    full_w = full_bbox[2] - full_bbox[0]
+    if full_w <= max_width and len(words) <= 2:
+        return [text]
+
+    best_split = None
+    best_diff = 10**9
+    for i in range(1, len(words)):
+        line1 = " ".join(words[:i])
+        line2 = " ".join(words[i:])
+        w1 = draw.textbbox((0, 0), line1, font=font, stroke_width=2)[2]
+        w2 = draw.textbbox((0, 0), line2, font=font, stroke_width=2)[2]
+        if w1 <= max_width and w2 <= max_width:
+            penalty = abs(w1 - w2 * 1.35)
+            if penalty < best_diff:
+                best_diff = penalty
+                best_split = [line1, line2]
+
+    if best_split:
+        return best_split
+
     lines = []
-    current = ""
+    cur = ""
     for w in words:
-        test = f"{current} {w}".strip()
-        bbox = draw.textbbox((0, 0), test, font=font)
-        if (bbox[2] - bbox[0]) <= max_width or not current:
-            current = test
+        test = f"{cur} {w}".strip()
+        tw = draw.textbbox((0, 0), test, font=font, stroke_width=2)[2]
+        if tw <= max_width or not cur:
+            cur = test
         else:
-            lines.append(current)
-            current = w
-    if current:
-        lines.append(current)
+            lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
     return lines[:2]
-
-
-def _fit_font(draw: ImageDraw.ImageDraw, text: str, font_path: str, start_size: int, min_size: int, max_width: int):
-    for size in range(start_size, min_size - 1, -2):
-        f = _load_font(font_path, size)
-        bbox = draw.textbbox((0, 0), text, font=f)
-        if (bbox[2] - bbox[0]) <= max_width:
-            return f, text
-    f = _load_font(font_path, min_size)
-    return f, text[:22] + "..."
 
 
 def generate_job_banner(
     org_name_bn: str,
-    org_short_en: str,
-    vacancy_bn: str,
-    qualification_bn: str,
-    deadline_bn: str,
+    org_short_en: str = "",
+    vacancy_bn: str = "",
+    qualification_bn: str = "",
+    deadline_bn: str = "",
     job_type_bn: str = "সরকারি চাকরি",
     output_path: str = "job_banner.png",
 ) -> str:
-    """
-    Creates a 1200x630 modern, high-CTR job circular thumbnail banner for bdedujob.blogspot.com.
-    """
-    width, height = 1200, 630
-    img = Image.new("RGB", (width, height), "#0b2e1f")
+    _ensure_templates()
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+
+    combined_check = f"{org_name_bn} {org_short_en} {job_type_bn}".lower()
+    if "সাপ্তাহিক" in combined_check or "saptahik" in combined_check or "পত্রিকা" in combined_check:
+        img = Image.open(TEMPLATE_SAPTAHIK).convert("RGB")
+        img.save(output_path, format="PNG", optimize=True)
+        return output_path
+
+    img = Image.open(TEMPLATE_JOB).convert("RGB")
     draw = ImageDraw.Draw(img)
 
-    # Smooth dark-emerald to teal gradient background
-    for y in range(height):
-        r = int(10 + (y / height) * 12)
-        g = int(48 + (y / height) * 35)
-        b = int(32 + (y / height) * 28)
-        draw.line([(0, y), (width, y)], fill=(r, g, b))
+    clean_name = _clean_org_name_bn(org_name_bn)
 
-    # Decorative geometric accent shapes
-    draw.ellipse([920, -120, 1340, 300], fill="#145337", outline="#1e704c", width=3)
-    draw.ellipse([-140, 380, 260, 780], fill="#11422c", outline="#1c6443", width=3)
+    center_x = 684
+    max_width = 1080
 
-    # Outer border frame
-    draw.rounded_rectangle(
-        [28, 28, width - 28, height - 28],
-        radius=24,
-        outline="#34d399",
-        width=3,
-    )
+    chosen_font = _load_font(FONT_BOLD, 92)
+    chosen_lines = [clean_name]
 
-    # Top header badge (Job Type + Year) with drawn indicator circle
-    draw.rounded_rectangle([64, 58, 390, 118], radius=30, fill="#f59e0b")
-    draw.ellipse([86, 78, 106, 98], fill="#0b2e1f")
-    font_badge = _load_font(FONT_BOLD, 30)
-    draw.text((246, 88), f"{job_type_bn} ২০২৬", font=font_badge, fill="#0b2e1f", anchor="mm")
+    for fsize in range(100, 56, -4):
+        font = _load_font(FONT_BOLD, fsize)
+        lines = _split_balanced_two_lines(clean_name, draw, font, max_width=max_width)
+        widths = [draw.textbbox((0, 0), ln, font=font, stroke_width=2)[2] for ln in lines]
+        line_step = int(fsize * 1.12)
+        total_h = line_step * len(lines)
+        if max(widths) <= max_width and total_h <= 235:
+            chosen_font = font
+            chosen_lines = lines
+            break
 
-    # Right top short code pill
-    if org_short_en:
-        draw.rounded_rectangle([860, 58, 1136, 118], radius=16, fill="#145337", outline="#34d399", width=2)
-        font_code = _load_font(FONT_BOLD, 28)
-        draw.text((998, 88), org_short_en.upper()[:18], font=font_code, fill="#ecfdf5", anchor="mm")
+    fsize = chosen_font.size
+    line_step = int(fsize * 1.10)
 
-    # Main Title: Organization Name in Bangla (1-2 lines)
-    font_org = _load_font(FONT_BOLD, 54)
-    org_lines = _wrap_text(draw, org_name_bn, font_org, max_width=1060)
-    y_cursor = 150
-    for line in org_lines:
-        draw.text((64, y_cursor), line, font=font_org, fill="#ffffff")
-        y_cursor += 68
-
-    # Subtitle highlight bar: "নিয়োগ বিজ্ঞপ্তি ২০২৬ প্রকাশিত"
-    y_cursor += 12
-    draw.rounded_rectangle([64, y_cursor, 660, y_cursor + 68], radius=14, fill="#10b981")
-    font_sub = _load_font(FONT_BOLD, 38)
-    draw.text((362, y_cursor + 34), "নিয়োগ বিজ্ঞপ্তি ২০২৬ প্রকাশিত", font=font_sub, fill="#06281b", anchor="mm")
-
-    # Info cards row (Vacancy | Qualification | Deadline)
-    card_y = 400
-    card_h = 118
-    cards = [
-        ("শূন্যপদ সংখ্যা", vacancy_bn, "#d97706"),
-        ("শিক্ষাগত যোগ্যতা", qualification_bn, "#0284c7"),
-        ("আবেদনের শেষ তারিখ", deadline_bn, "#db2777"),
-    ]
-    card_w = 340
-    gap = 26
-    start_x = 64
-
-    font_card_label = _load_font(FONT_SEMIBOLD, 23)
-
-    for idx, (label, val, accent_col) in enumerate(cards):
-        cx = start_x + idx * (card_w + gap)
-        draw.rounded_rectangle(
-            [cx, card_y, cx + card_w, card_y + card_h],
-            radius=16,
-            fill="#0f3d29",
-            outline="#34d399",
-            width=2,
+    if len(chosen_lines) == 1:
+        draw.text(
+            (center_x, 495),
+            chosen_lines[0],
+            font=chosen_font,
+            fill=DARK_GREEN,
+            anchor="mm",
+            stroke_width=2,
+            stroke_fill=DARK_GREEN,
         )
-        draw.rounded_rectangle([cx, card_y, cx + 12, card_y + card_h], radius=5, fill=accent_col)
-        draw.text((cx + 28, card_y + 18), label, font=font_card_label, fill="#a7f3d0")
-        fitted_font, val_display = _fit_font(draw, val, FONT_BOLD, start_size=30, min_size=21, max_width=card_w - 44)
-        draw.text((cx + 28, card_y + 60), val_display, font=fitted_font, fill="#ffffff")
+    else:
+        y1 = 482 - (line_step // 2)
+        y2 = 482 + (line_step // 2)
+        draw.text(
+            (center_x, y1),
+            chosen_lines[0],
+            font=chosen_font,
+            fill=DARK_GREEN,
+            anchor="mm",
+            stroke_width=2,
+            stroke_fill=DARK_GREEN,
+        )
+        draw.text(
+            (center_x, y2),
+            chosen_lines[1],
+            font=chosen_font,
+            fill=DARK_GREEN,
+            anchor="mm",
+            stroke_width=2,
+            stroke_fill=DARK_GREEN,
+        )
 
-    # Bottom footer bar with website & app branding
-    draw.rounded_rectangle([32, 542, width - 32, height - 32], radius=18, fill="#062015")
-    draw.ellipse([58, 563, 74, 579], fill="#34d399")
-    font_footer = _load_font(FONT_SEMIBOLD, 24)
-    draw.text(
-        (88, 554),
-        "বিস্তারিত ও অনলাইন আবেদন: www.bdedujob.blogspot.com",
-        font=font_footer,
-        fill="#6ee7b7",
-    )
-    draw.text(
-        (1136, 571),
-        "BD Education & Job Info",
-        font=font_footer,
-        fill="#fbbf24",
-        anchor="rm",
-    )
-
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     img.save(output_path, format="PNG", optimize=True)
     return output_path
-
-
-if __name__ == "__main__":
-    out = generate_job_banner(
-        org_name_bn="বাংলাদেশ লোক-প্রশাসন প্রশিক্ষণ কেন্দ্র (BPATC)",
-        org_short_en="BPATC JOB 2026",
-        vacancy_bn="৩৯ টি পদ (স্থায়ী)",
-        qualification_bn="৮ম / এসএসসি / এইচএসসি / স্নাতক",
-        deadline_bn="১৫ নভেম্বর ২০২৬",
-        job_type_bn="সরকারি চাকরি",
-        output_path=os.path.join(BASE_DIR, "sample_banner.png"),
-    )
-    print("Generated sample banner:", out)
