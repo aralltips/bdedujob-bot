@@ -59,18 +59,73 @@ ALLOWED_BLOGGER_LABELS = [
 
 JOB_SOURCES = [
     {
-        "name": "BD Govt Job",
+        "name": "BD Govt Job (All Latest)",
         "feed_url": "https://bdgovtjob.net/feed/",
         "default_label": "Govt Jobs",
     },
     {
-        "name": "eJobs Circular",
+        "name": "BD Govt Job (Bank Jobs)",
+        "feed_url": "https://bdgovtjob.net/category/bank-jobs/feed/",
+        "default_label": "Bank Jobs",
+    },
+    {
+        "name": "BD Govt Job (Exam Result & Routine Notice)",
+        "feed_url": "https://bdgovtjob.net/category/notice/feed/",
+        "default_label": "Result",
+    },
+    {
+        "name": "BD Govt Job (Educational Institution Jobs)",
+        "feed_url": "https://bdgovtjob.net/category/educational-institution-jobs/feed/",
+        "default_label": "Edcation",
+    },
+    {
+        "name": "BD Govt Job (Govt Circulars)",
+        "feed_url": "https://bdgovtjob.net/category/government-jobs-circular/feed/",
+        "default_label": "Govt Jobs",
+    },
+    {
+        "name": "BD Govt Job (NGO Jobs)",
+        "feed_url": "https://bdgovtjob.net/category/ngo-job-circular/feed/",
+        "default_label": "Privet Jobs",
+    },
+    {
+        "name": "BD Govt Job (Private Jobs)",
+        "feed_url": "https://bdgovtjob.net/category/private-jobs/feed/",
+        "default_label": "Privet Jobs",
+    },
+    {
+        "name": "BD Govt Job (Saptahik Chakrir Khobor)",
+        "feed_url": "https://bdgovtjob.net/category/saptahik-chakrir-khobor/feed/",
+        "default_label": "Saptahik Job Paper",
+    },
+    {
+        "name": "eJobs Circular (Bank Jobs)",
+        "feed_url": "https://ejobscircular.com/category/bank-jobs/feed/",
+        "default_label": "Bank Jobs",
+    },
+    {
+        "name": "eJobs Circular (All Jobs)",
         "feed_url": "https://ejobscircular.com/feed/",
         "default_label": "Govt Jobs",
     },
     {
-        "name": "KF Planet Jobs",
-        "feed_url": "https://kfplanet.com/feed/",
+        "name": "KF Planet (Exam Routine)",
+        "feed_url": "https://kfplanet.com/category/education-bd/exam-routine/feed/",
+        "default_label": "Exam Routine",
+    },
+    {
+        "name": "KF Planet (Exam Result)",
+        "feed_url": "https://kfplanet.com/category/education-bd/exam-result/feed/",
+        "default_label": "Result",
+    },
+    {
+        "name": "KF Planet (Education & Admission)",
+        "feed_url": "https://kfplanet.com/category/education-bd/admission-info/feed/",
+        "default_label": "Edcation",
+    },
+    {
+        "name": "KF Planet (All Jobs)",
+        "feed_url": "https://kfplanet.com/category/jobs-bd/feed/",
         "default_label": "All Jobs",
     },
 ]
@@ -78,8 +133,9 @@ JOB_SOURCES = [
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    )
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/rss+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
 
@@ -92,29 +148,32 @@ def decode_cfemail(cf_hex: str) -> str:
         return ""
 
 
-def determine_blogger_labels(raw_title: str, raw_cats: list, ai_labels: list, job_type_bn: str = "") -> list:
-    combined = f"{raw_title} {' '.join(raw_cats)} {' '.join(ai_labels)} {job_type_bn}".lower()
+def determine_blogger_labels(raw_title: str, raw_cats: list, ai_labels: list, job_type_bn: str = "", default_label: str = "") -> list:
+    combined = f"{raw_title} {' '.join(raw_cats)} {' '.join(ai_labels)} {job_type_bn} {default_label}".lower()
     labels = {"All Jobs", "job", "all"}
+
+    if default_label and default_label in ALLOWED_BLOGGER_LABELS:
+        labels.add(default_label)
 
     if any(k in combined for k in ["সাপ্তাহিক", "saptahik", "weekly", "পত্রিকা"]):
         labels.update(["Saptahik Job Paper", "Govt Jobs", "Privet Jobs"])
     if any(k in combined for k in ["ব্যাংক", "bank"]):
         labels.add("Bank Jobs")
-    if any(k in combined for k in ["বেসরকারি", "private", "privet", "ngo", "এনজিও", "ফাউন্ডেশন", "foundation", "কোম্পানি", "লিমিটেড", "ltd", "group", "হাসপাতাল"]):
+    if any(k in combined for k in ["বেসরকারি", "private", "privet", "ngo", "এনজিও", "ফাউন্ডেশন", "foundation", "কোম্পানি", "লিমিটেড", "ltd", "group", "হাসপাতাল", "ফার্মাসিউটিক্যাল"]):
         labels.add("Privet Jobs")
-    if any(k in combined for k in ["সরকারি", "govt", "government", "মন্ত্রণালয়", "অধিদপ্তর", "বিশ্ববিদ্যালয়", "বিশ্ববিদ্যালয়", "কর্পোরেশন", "বোর্ড", "কমিশন", "সিভিল সার্জন", "জেলা প্রশাসক", "বিপিএটিসি", "বিকেএসপি"]):
+    if any(k in combined for k in ["সরকারি", "govt", "government", "মন্ত্রণালয়", "অধিদপ্তর", "বিশ্ববিদ্যালয়", "বিশ্ববিদ্যালয়", "কর্পোরেশন", "বোর্ড", "কমিশন", "সিভিল সার্জন", "জেলা প্রশাসক", "বিপিএটিসি", "বিকেএসপি", "ইনস্টিটিউট", "কর অঞ্চল"]):
         if "বেসরকারি" not in combined and "এনজিও" not in combined and "ফাউন্ডেশন" not in combined:
             labels.add("Govt Jobs")
     if any(k in combined for k in ["ফলাফল", "রেজাল্ট", "result"]):
         labels.update(["Result", "exam result"])
-    if any(k in combined for k in ["রুটিন", "routine", "পরীক্ষার তারিখ", "exam date"]):
+    if any(k in combined for k in ["রুটিন", "routine", "পরীক্ষার তারিখ", "exam date", "সময়সূচি", "সময়সূচি", "কেন্দ্র তালিকা", "প্রবেশপত্র", "admit card"]):
         labels.add("Exam Routine")
-    if any(k in combined for k in ["শিক্ষা", "education", "edcation", "ভর্তি", "admission", "ssc", "hsc", "honours", "degree"]):
+    if any(k in combined for k in ["শিক্ষা", "education", "edcation", "ভর্তি", "admission", "ssc", "hsc", "honours", "degree", "বিশ্ববিদ্যালয়", "বিশ্ববিদ্যালয়", "কলেজ", "স্কুল", "মাদ্রাসা"]):
         labels.add("Edcation")
     if any(k in combined for k in ["কারেন্ট অ্যাফেয়ার্স", "current affairs", "সাধারণ জ্ঞান"]):
         labels.add("Current Affairs")
 
-    if not any(x in labels for x in ["Govt Jobs", "Privet Jobs", "Bank Jobs", "Saptahik Job Paper"]):
+    if not any(x in labels for x in ["Govt Jobs", "Privet Jobs", "Bank Jobs", "Saptahik Job Paper", "Result", "Exam Routine", "Edcation"]):
         labels.add("Govt Jobs")
 
     return [lbl for lbl in ALLOWED_BLOGGER_LABELS if lbl in labels]
@@ -239,10 +298,11 @@ def scrape_job_details(article_url: str) -> dict:
                 if clean_src not in notice_images:
                     notice_images.append(clean_src)
 
-    # সোর্স পেজ থেকে লিংকসমূহ সংগ্রহ
+    # সোর্স পেজ থেকে লিংকসমূহ ও অফিশিয়াল PDF সংগ্রহ
     teletalk_url = ""
     official_site = ""
     external_apply_url = ""
+    pdf_links = []
     if content_div:
         for a in content_div.find_all("a", href=True):
             href = a["href"].strip()
@@ -252,11 +312,16 @@ def scrape_job_details(article_url: str) -> dict:
                 if em and em not in decoded_emails:
                     decoded_emails.append(em)
                 continue
-            if any(skip in href.lower() for skip in ["bdgovtjob.net", "ejobscircular.com", "kfplanet.com", "facebook.com", "t.me", "whatsapp.com", "twitter.com", "wp.com"]):
+            low_href = href.lower()
+            if ".pdf" in low_href and href.startswith("http"):
+                if href not in pdf_links:
+                    pdf_links.append(href)
                 continue
-            if "teletalk.com.bd" in href and not teletalk_url:
+            if any(skip in low_href for skip in ["bdgovtjob.net", "ejobscircular.com", "kfplanet.com", "facebook.com", "t.me", "whatsapp.com", "twitter.com", "wp.com"]):
+                continue
+            if "teletalk.com.bd" in low_href and not teletalk_url:
                 teletalk_url = href
-            elif any(d in href for d in ["bdjobs.com", "jobs.", "career", "erecruitment", "apply"]) and not external_apply_url:
+            elif any(d in low_href for d in ["bdjobs.com", "jobs.", "career", "erecruitment", "apply"]) and not external_apply_url:
                 external_apply_url = href
             elif href.startswith("http") and not official_site:
                 official_site = href
@@ -266,11 +331,20 @@ def scrape_job_details(article_url: str) -> dict:
     kv_map = {}
     known_keys = [
         "প্রতিষ্ঠানের নাম",
+        "প্রতিষ্ঠানের ইংরেজি নাম",
         "কার্যক্রম / খাত",
         "জব লোকেশন",
         "পদের ক্যাটাগরি",
+        "পদের নাম",
         "মোট শূন্যপদ",
         "চাকরির ধরন",
+        "নোটিশের ধরন",
+        "স্মারক নম্বর",
+        "নোটিশ প্রকাশের তারিখ",
+        "ফলাফলের ধরন",
+        "মোট উত্তীর্ণ প্রার্থী",
+        "ব্যবহারিক / পরবর্তী পরীক্ষার তারিখ",
+        "ব্যবহারিক / পরবর্তী পরীক্ষার কেন্দ্র",
         "বয়সসীমা",
         "শিক্ষাগত যোগ্যতা",
         "বেতন ও সুযোগ-সুবিধা",
@@ -295,7 +369,7 @@ def scrape_job_details(article_url: str) -> dict:
     # সোর্স থেকে আবেদনের ধাপগুলো বের করা
     apply_steps = []
     for i, ln in enumerate(lines):
-        if "কিভাবে" in ln and "আবেদন করবেন" in ln:
+        if ("কিভাবে" in ln and "আবেদন করবেন" in ln) or ("গুরুত্বপূর্ণ নির্দেশনা" in ln) or ("জরুরি নির্দেশাবলি" in ln):
             for sub in lines[i + 1 : i + 15]:
                 if any(stop in sub for stop in ["Job Circular", "Images / PDFs", "সাধারণ জিজ্ঞাসা", "আরও চলমান"]):
                     break
@@ -333,6 +407,7 @@ def scrape_job_details(article_url: str) -> dict:
     return {
         "raw_text": raw_text[:9500],
         "notice_images": notice_images[:6],
+        "pdf_links": pdf_links[:3],
         "teletalk_url": teletalk_url,
         "external_apply_url": external_apply_url,
         "official_site": official_site or kv_map.get("অফিশিয়াল ওয়েবসাইট", ""),
@@ -460,37 +535,41 @@ def extract_structured_job_info(raw_title: str, scraped: dict) -> dict:
 
     if GEMINI_API_KEY:
         prompt = f"""
-You are an accurate Bangladeshi job circular editor for bdedujob.blogspot.com.
-Read the source job circular carefully and extract ONLY the real facts from the circular.
+You are an accurate Bangladeshi job & education portal editor for bdedujob.blogspot.com.
+Read the source circular/notice carefully and extract ONLY the real facts from the source.
 CRITICAL RULES:
-1. NEVER say "গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের আওতাধীন" if the organization is an NGO, Foundation, Private company, Hospital, or Bank!
-2. Follow the exact job type (সরকারি চাকরি / বেসরকারি চাকরি / এনজিও চাকরি / ব্যাংক জব), exact post names, qualifications, salary, job location, application method (ই-মেইলের মাধ্যমে / অনলাইনে / সরাসরি সাক্ষাৎকার / ডাকযোগে), email address ({apply_email}), and deadline from the source text.
+1. NEVER say "গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের আওতাধীন" if the organization is an NGO, Foundation, Private company, Hospital, or Private Bank!
+2. Follow the exact post/notice type:
+   - If it is a Job Circular: post_title should be "<Bangla Org Name> নিয়োগ বিজ্ঞপ্তি ২০২৬ - <English Org Name> Job Circular 2026"
+   - If it is an Exam Result (ফলাফল / রেজাল্ট): post_title should be "<Bangla Org/Exam Name> পরীক্ষার ফলাফল ২০২৬ - <English Name> Exam Result 2026" and job_type_bn should be "পরীক্ষার ফলাফল (Exam Result)"
+   - If it is an Exam Routine/Schedule (সময়সূচি / রুটিন / কেন্দ্র তালিকা): post_title should be "<Bangla Org/Exam Name> পরীক্ষার সময়সূচি ২০২৬ - <English Name> Exam Routine 2026" and job_type_bn should be "পরীক্ষার রুটিন ও সময়সূচি (Exam Routine)"
+   - If it is an Admission Notice (ভর্তি বিজ্ঞপ্তি): post_title should be "<Bangla Institution Name> ভর্তি বিজ্ঞপ্তি ২০২৬ - <English Name> Admission 2026" and job_type_bn should be "ভর্তি বিজ্ঞপ্তি (Admission Info)"
 3. Set "is_teletalk": true ONLY if the application link contains "teletalk.com.bd" or uses 16222 SMS fee payment. Otherwise set "is_teletalk": false.
 
 Return ONLY valid JSON with these keys:
-- post_title: "<Bangla Org Name> নিয়োগ বিজ্ঞপ্তি ২০২৬ - <English Org Name> Job Circular 2026"
-- org_name_bn: Bangla organization name
+- post_title: Accurate Bangla + English title for 2026
+- org_name_bn: Bangla organization/board/institution name (concise, e.g. "বাংলাদেশ পরমাণু কৃষি গবেষণা ইনস্টিটিউট (বিনা)" or "ব্যাংক এশিয়া পিএলসি")
 - org_name_en: English organization name
-- short_code: Short English acronym (e.g. BPATC, NSTU, ADDIN, BRAC)
-- job_type_bn: Exact job type in Bangla (e.g. "এনজিও চাকরি (NGO Job)", "বেসরকারি চাকরি (Private Job)", "সরকারি চাকরি (Government Job)", "ব্যাংক জব (Bank Job)")
-- is_govt: boolean (true only for government/public university jobs, false for NGO/private/bank)
+- short_code: Short English acronym (e.g. BPATC, BINA, BPSC, BANKASIA)
+- job_type_bn: Exact category in Bangla (e.g. "সরকারি চাকরি (Government Job)", "ব্যাংক জব (Bank Job)", "বেসরকারি চাকরি (Private Job)", "এনজিও চাকরি (NGO Job)", "পরীক্ষার ফলাফল (Exam Result)", "পরীক্ষার রুটিন ও সময়সূচি (Exam Routine)")
+- is_govt: boolean (true only for government/public university/board, false for NGO/private/private bank)
 - is_teletalk: boolean (true ONLY if applied via *.teletalk.com.bd and 16222 SMS)
-- vacancy_bn: Exact vacancy count or category count in Bangla from the circular
-- qualification_bn: Exact educational qualification in Bangla from the circular
-- age_limit_bn: Exact age limit in Bangla from the circular
-- salary_bn: Exact salary & benefits in Bangla from the circular
-- location_bn: Exact job location/workplace in Bangla from the circular
-- fee_bn: Exact application fee in Bangla (or "প্রযোজ্য নয়" if none)
+- vacancy_bn: Exact vacancy count / passed candidates count in Bangla from the notice
+- qualification_bn: Exact educational qualification or post names in Bangla
+- age_limit_bn: Exact age limit or notice memo number in Bangla
+- salary_bn: Exact salary & benefits or exam details in Bangla
+- location_bn: Exact job location or exam center in Bangla
+- fee_bn: Exact application fee in Bangla (or "প্রযোজ্য নয়")
 - start_date_bn: Publish/start date in Bangla
-- deadline_bn: Exact application deadline in Bangla
-- apply_method_bn: Exact method (e.g. "ই-মেইলের মাধ্যমে (hrd@ad-din.org)", "অনলাইনে", "সরাসরি সাক্ষাৎকার")
-- apply_email: Email address for applying if mentioned, else ""
+- deadline_bn: Exact application deadline or exam date in Bangla
+- apply_method_bn: Exact method (e.g. "অনলাইনে", "ই-মেইলের মাধ্যমে", "সরাসরি সাক্ষাৎকার", "অফিশিয়াল ওয়েবসাইট থেকে ফলাফল ও নোটিশ ডাউনলোড")
+- apply_email: Email address if mentioned, else ""
 - official_site: Official website URL
-- apply_url: Best application URL or mailto: link
-- intro_paragraph_1: 3-4 accurate Bangla sentences introducing this specific circular based strictly on its real facts.
+- apply_url: Best application/result/notice URL or mailto: link
+- intro_paragraph_1: 3-4 accurate Bangla sentences introducing this specific circular/result/routine based strictly on its real facts.
 - intro_paragraph_2: 2-3 accurate Bangla sentences explaining what details are covered below.
-- posts_breakdown: List of all job posts from the circular, each object having {{"post_name", "vacancy", "qualification", "salary"}} in Bangla.
-- apply_steps_bn: List of 4-5 step-by-step Bangla strings explaining the EXACT application process of this circular.
+- posts_breakdown: List of all job posts or exam schedules from the notice, each object having {{"post_name", "vacancy", "qualification", "salary"}} in Bangla.
+- apply_steps_bn: List of 4-5 step-by-step Bangla strings explaining the EXACT application or result-checking/exam instructions from this notice.
 
 Source Title: {raw_title}
 Decoded Emails found: {emails}
@@ -548,11 +627,11 @@ def create_and_upload_banner(info: dict) -> str:
 
     generate_job_banner(
         org_name_bn=info["org_name_bn"],
-        org_short_en=f"{info['short_code']} JOB 2026",
+        org_short_en=f"{info['short_code']} 2026",
         vacancy_bn=info["vacancy_bn"],
         qualification_bn=info["qualification_bn"],
         deadline_bn=info["deadline_bn"],
-        job_type_bn=info.get("job_type_bn", ""),
+        job_type_bn=f"{info.get('job_type_bn', '')} {info.get('post_title', '')}",
         output_path=local_path,
     )
 
@@ -595,7 +674,8 @@ def create_and_upload_banner(info: dict) -> str:
     return local_path
 
 
-def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list) -> str:
+def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, pdf_links: list = None) -> str:
+    pdf_links = pdf_links or []
     org_bn = info["org_name_bn"]
     org_en = info["org_name_en"]
     short_code = info["short_code"].upper()
@@ -619,12 +699,24 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list) -
 
     notice_imgs_html = ""
     for i, img_url in enumerate(notice_images, start=1):
-        alt_txt = f"{org_bn} নিয়োগ বিজ্ঞপ্তি ২০২৬ - {org_en} Job Circular 2026 Page {i}"
+        alt_txt = f"{title_full} Page {i}"
         notice_imgs_html += f"""
         <div class="separator" style="clear: both; text-align: center; margin: 18px 0;">
           <a href="{img_url}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;" target="_blank" rel="noopener">
             <img alt="{alt_txt}" title="{alt_txt}" border="0" loading="lazy" src="{img_url}" style="max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);" />
           </a>
+        </div>"""
+
+    for idx_pdf, pdf_url in enumerate(pdf_links, start=1):
+        encoded_pdf = urllib.parse.quote(pdf_url, safe="")
+        notice_imgs_html += f"""
+        <div style="margin: 20px 0; text-align: center;">
+          <iframe src="https://docs.google.com/viewer?url={encoded_pdf}&amp;embedded=true" style="width: 100%; height: 580px; border: 1px solid #cbd5e1; border-radius: 6px;" frameborder="0" loading="lazy"></iframe>
+          <div style="margin-top: 12px;">
+            <a href="{pdf_url}" target="_blank" rel="nofollow noopener" style="display: inline-block; background-color: #dc2626; color: #ffffff; font-weight: bold; padding: 10px 24px; border-radius: 6px; text-decoration: none;">
+              📥 অফিসিয়াল নোটিশ / ফলাফল PDF ডাউনলোড করুন (Download PDF {idx_pdf})
+            </a>
+          </div>
         </div>"""
 
     # আবেদনের বাটন ও পদ্ধতি (বিজ্ঞপ্তিতে যা আছে ঠিক তাই দেখাবে!)
@@ -922,7 +1014,11 @@ def main():
     posted_urls = load_posted_jobs()
     published_count = 0
 
-    for source in JOB_SOURCES:
+    # সব ক্যাটাগরির পোস্ট যেন পালাক্রমে (Round-Robin) সমানভাবে পাবলিশ হয়
+    offset = len(posted_urls) % len(JOB_SOURCES)
+    rotated_sources = JOB_SOURCES[offset:] + JOB_SOURCES[:offset]
+
+    for source in rotated_sources:
         if published_count >= MAX_POSTS_PER_RUN:
             break
         print(f"[INFO] Checking source: {source['name']} ({source['feed_url']})")
@@ -944,12 +1040,18 @@ def main():
                 scraped = scrape_job_details(link)
                 info = extract_structured_job_info(item["title"], scraped)
                 banner_url = create_and_upload_banner(info)
-                html_post = build_bdedujob_post_html(info, banner_url, scraped["notice_images"])
+                html_post = build_bdedujob_post_html(
+                    info,
+                    banner_url,
+                    scraped["notice_images"],
+                    scraped.get("pdf_links", []),
+                )
                 final_labels = determine_blogger_labels(
                     item["title"],
                     item.get("categories", []),
                     info.get("blogger_labels", []),
                     info.get("job_type_bn", ""),
+                    source.get("default_label", ""),
                 )
 
                 if BLOGGER_BLOG_ID and BLOGGER_REFRESH_TOKEN:
@@ -962,7 +1064,11 @@ def main():
                     print(f"[SUCCESS] Published to Blogger! Post URL: {res.get('url')}")
                     ping_google_websub_hub()
                     save_posted_job(link)
+                    posted_urls.append(link)
                     published_count += 1
+                    time.sleep(4)
+                    # একটি ক্যাটাগরি থেকে ১টি পোস্ট করার পর পরবর্তী ক্যাটাগরিতে যাবে
+                    break
                 else:
                     preview_file = os.path.join(BASE_DIR, "sample_post_preview.html")
                     with open(preview_file, "w", encoding="utf-8") as f:
