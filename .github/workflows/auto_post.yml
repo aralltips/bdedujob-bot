@@ -3,7 +3,7 @@ name: Auto Publish BD Job Circulars to Blogger
 on:
   schedule:
     # প্রতিদিন ৪ ঘণ্টা পর পর অটোমেটিক রান হবে
-    - cron: '0 */4 * * *'
+        - cron: '25 */2 * * *'
   workflow_dispatch: # যেকোনো সময় ১ ক্লিকে ম্যানুয়ালি রান করার অপশন
 
 permissions:
