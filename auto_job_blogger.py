@@ -159,14 +159,41 @@ def determine_blogger_labels(raw_title: str, raw_cats: list, ai_labels: list, jo
     return [lbl for lbl in ALLOWED_BLOGGER_LABELS if lbl in labels]
 
 
+BUILTIN_POSTED_URLS = [
+    "https://bdgovtjob.net/bpatc-job-circular/",
+    "https://bdgovtjob.net/saptahik-chakrir-khobor/",
+    "https://bdgovtjob.net/bangladesh-krira-shikkha-protishtan-bksp-job-circular/",
+    "https://bdgovtjob.net/rajshahi-university-job-circular/",
+    "https://bdgovtjob.net/nstu-job-circular/",
+    "https://bdgovtjob.net/meherpur-university-job-circular/",
+    "https://bdgovtjob.net/ad-din-foundation-job-circular/",
+    "https://bdgovtjob.net/popular-pharmaceuticals-ltd-job-circular/",
+    "https://bdgovtjob.net/drug-international-limited-job-circular/",
+    "https://ejobscircular.com/tax-zone-2-chittagong-job-circular/",
+    "https://kfplanet.com/hsc-center-list/",
+    "https://bdgovtjob.net/bank-asia-limited-job-circular/",
+    "https://bdgovtjob.net/bina-written-exam-result-notice/",
+    "https://bdgovtjob.net/bpsc-written-examination-notice/",
+    "https://bdgovtjob.net/taxzone20-results-notice/",
+    "https://bdgovtjob.net/brac-bank-limited-job-circular/",
+    "https://bdgovtjob.net/school-and-college-job-circular/",
+    "https://bdgovtjob.net/sme-foundation-job-circular/",
+    "https://ejobscircular.com/bangladesh-bank-job-circular/",
+    "https://ejobscircular.com/north-west-power-generation-job-circular/",
+]
+
+
 def load_posted_jobs() -> list:
+    posted = list(BUILTIN_POSTED_URLS)
     if os.path.exists(DB_FILE):
         try:
             with open(DB_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                for u in json.load(f):
+                    if u not in posted:
+                        posted.append(u)
         except Exception:
-            return []
-    return []
+            pass
+    return posted
 
 
 def save_posted_job(url: str):
