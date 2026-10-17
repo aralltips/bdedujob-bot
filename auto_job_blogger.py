@@ -417,6 +417,38 @@ BUILTIN_POSTED_URLS = [
     "https://bdgovtjob.net/bangladesh-army-civilian-job-circular/",
     "https://bdgovtjob.net/square-group-job-circular/",
     "https://bdgovtjob.net/aci-limited-job-circular/",
+    "https://bdgovtjob.net/bangladesh-ansar-vdp-job-circular/",
+    "https://bdgovtjob.net/meghna-group-job-circular/",
+    "https://bdgovtjob.net/bangladesh-police-job-circular/",
+    "https://bdgovtjob.net/tmss-ngo-job-circular/",
+    "https://bdgovtjob.net/mist-job-circular/",
+    "https://biddabari.com/bcs-question-bank/24th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/25th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/26th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/27th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/28th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/29th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/30th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/31th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/32th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/33th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/34th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/35th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/36th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/37th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/38th-BCS-Question-Solution-Biddabari",
+    "https://biddabari.com/bcs-question-bank/50th-BCS-Question-Solution",
+    "https://prosnosomadhan.com/dyd-assistant-upazila-youth-development-officer-question-solution/",
+    "https://prosnosomadhan.com/dc-office-coxsbazar-question-solution/",
+    "https://prosnosomadhan.com/dyd-upazila-youth-development-officer-question-solution/",
+    "https://prosnosomadhan.com/npa-exam-question-solution/",
+    "https://biddabari.com/11-20-Grade-question-bank/cabinet-division-question-solution-2026-office-support-staff",
+    "https://biddabari.com/11-20-Grade-question-bank/bkkb-question-solution-2026-office-assistant",
+    "https://biddabari.com/Non-Cadre-question-bank/bmet-assistant-director-question-solution-2026",
+    "https://eduresultbd.com/dhaka-university-masters-admission/",
+    "https://eduresultbd.com/nu-degree-exam-routine/",
+    "https://examresultbd.com/preliminary-to-masters-result/",
+    "https://eduresultbd.com/brac-medhabikash-scholarship/",
 ]
 
 
@@ -472,9 +504,9 @@ def fetch_rss_items(feed_url: str, max_age_days: int = 14) -> list:
 
 
 def is_deadline_expired(deadline_bn: str, title_str: str = "") -> bool:
-    """চলমান মাসের আগের কোনো মাসের (যেমন সেপ্টেম্বর বা আগস্ট) মেয়াদোত্তীর্ণ সার্কুলার হলে True রিটার্ন করবে।"""
+    """চলমান মাসের আগের কোনো মাসের (যেমন সেপ্টেম্বর বা আগস্ট) মেয়াদোত্তীর্ণ সার্কুলার বা রুটিন হলে True রিটার্ন করবে।"""
     combined = f"{deadline_bn} {title_str}".lower()
-    if any(k in combined for k in ["ফলাফল", "রেজাল্ট", "result", "সময়সূচি", "সময়সূচি", "রুটিন", "routine"]):
+    if any(k in combined for k in ["ফলাফল", "রেজাল্ট", "result"]):
         return False
 
     bn_months = [
@@ -1155,20 +1187,15 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     </a>
   </div>
 
-  <!-- ২. ভূমিকা ও ফেসবুক/RSS এসইও সামারি -->
+  <!-- ২. ভূমিকা -->
   <p style="text-align: justify;">
-    📢 <b>{title_full}</b><br />
-    🏢 <b>প্রতিষ্ঠান:</b> {org_bn} ({org_en})<br />
-    📌 <b>নোটিশের ধরন:</b> {info['job_type_bn']}<br />
-    💼 <b>পদের নাম / বিষয়:</b> {info['qualification_bn']}<br />
-    ⏳ <b>পরীক্ষার তারিখ ও সময়সূচি:</b> {info['deadline_bn']}<br />
-    👉 <b>বিস্তারিত দেখুন ও ডাউনলোড করুন নিচের লিংকে:</b>
+    <span style="color: #38761d;"><b>{org_en} Official Notice 2026:</b></span>
+    {info['intro_paragraph_1']}
   </p>
   <!--more-->
 
   <p style="text-align: justify;">
-    <span style="color: #38761d;"><b>{org_en} Official Notice 2026:</b></span>
-    {info['intro_paragraph_1']} {info['intro_paragraph_2']}
+    {info['intro_paragraph_2']}
   </p>
 
   <!-- ৩. অফিসিয়াল অ্যাপ ও ওয়েবসাইট প্রমোশন বক্স -->
@@ -1275,22 +1302,15 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     </a>
   </div>
 
-  <!-- ২. ভূমিকা ও ফেসবুক/RSS এসইও সামারি -->
+  <!-- ২. ভূমিকা -->
   <p style="text-align: justify;">
-    📢 <b>{title_full}</b><br />
-    🏢 <b>প্রতিষ্ঠান:</b> {org_bn} ({org_en})<br />
-    💼 <b>চাকরির ধরণ:</b> {info['job_type_bn']}<br />
-    📌 <b>পদসংখ্যা:</b> {info['vacancy_bn']}<br />
-    🎓 <b>শিক্ষাগত যোগ্যতা:</b> {info['qualification_bn']}<br />
-    💰 <b>বেতন স্কেল:</b> {info['salary_bn']}<br />
-    ⏳ <b>শেষ তারিখ:</b> {info['deadline_bn']}<br />
-    👉 <b>বিস্তারিত দেখুন ও আবেদন করুন নিচের লিংকে:</b>
+    <span style="color: #38761d;"><b>{org_en} Job Circular 2026:</b></span>
+    {info['intro_paragraph_1']}
   </p>
   <!--more-->
 
   <p style="text-align: justify;">
-    <span style="color: #38761d;"><b>{org_en} Job Circular 2026:</b></span>
-    {info['intro_paragraph_1']} {info['intro_paragraph_2']}
+    {info['intro_paragraph_2']}
   </p>
 
   <!-- ৩. অফিসিয়াল অ্যাপ ও ওয়েবসাইট প্রমোশন বক্স -->
@@ -1639,17 +1659,9 @@ def build_and_publish_bcs_item(bcs_item: dict, is_draft: bool = False) -> dict:
   <p style="text-align: center;"><b><span style="font-size: x-large;">{num_bn} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান</span></b></p>
 
   <div style="text-align: justify; margin-bottom: 16px;">
-    📢 <b>{post_title}</b><br />
-    🏛️ <b>প্রতিষ্ঠান:</b> বাংলাদেশ সরকারি কর্ম কমিশন (BPSC)<br />
-    📘 <b>পরীক্ষার নাম:</b> {num_bn} তম বিসিএস প্রিলিমিনারি পরীক্ষা ({num_en} BCS Prelim)<br />
-    💯 <b>পূর্ণমান:</b> ২০০ (পূর্ণাঙ্গ MCQ প্রশ্ন ও নির্ভুল সমাধান)<br />
-    👉 <b>সম্পূর্ণ প্রশ্ন ও উত্তরমালা দেখুন নিচের লিংকে:</b>
+    সরকারি বেসরকারি সব ধরনের চাকরির খবর, বিসিএস ও ব্যাংক পরীক্ষার প্রশ্ন সমাধান, মাসিক প্রফেসর'স কারেন্ট অ্যাফেয়ার্স সবার আগে এই ওয়েবসাইটে <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">প্লে-স্টোর লিংক</a> এ গিয়ে আমাদের অফিসিয়াল অ্যাপটি ডাউনলোড করতে পারেন। তাই যেকোনো ধরনের চাকরির খবর ও বিগত বিসিএস প্রিলিমিনারি পরীক্ষার প্রশ্ন সমাধান পেতে ভিজিট করুন আমাদের ওয়েবসাইটে এবং অ্যাপে। নিচে <b>{num_bn} তম বিসিএস প্রিলিমিনারি পরীক্ষার পূর্ণাঙ্গ প্রশ্ন ও সমাধান</b> দেওয়া হলো:
   </div>
   <!--more-->
-
-  <div style="text-align: justify; margin-bottom: 16px;">
-    সরকারি বেসরকারি সব ধরনের চাকরির খবর, বিসিএস ও ব্যাংক পরীক্ষার প্রশ্ন সমাধান, মাসিক প্রফেসর'স কারেন্ট অ্যাফেয়ার্স সবার আগে এই ওয়েবসাইটে <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">প্লে-স্টোর লিংক</a> এ গিয়ে আমাদের অফিসিয়াল অ্যাপটি ডাউনলোড করতে পারেন। নিচে <b>{num_bn} তম বিসিএস প্রিলিমিনারি পরীক্ষার পূর্ণাঙ্গ প্রশ্ন ও সমাধান</b> দেওয়া হলো:
-  </div>
 
   <hr />
   <hr />
@@ -1796,18 +1808,9 @@ def build_and_publish_image_job_solution(
   <p style="text-align: center;"><b><span style="font-size: x-large;">{org_bn} এর {post_bn} পদের পরীক্ষার প্রশ্ন সমাধান ২০২৬</span></b></p>
 
   <div style="text-align: justify; margin-bottom: 16px;">
-    📢 <b>{post_title}</b><br />
-    🏢 <b>প্রতিষ্ঠান:</b> {org_bn}<br />
-    💼 <b>পদের নাম:</b> {post_bn}<br />
-    📅 <b>পরীক্ষার তারিখ:</b> {exam_date_bn}<br />
-    ⏱️ <b>সময় ও পূর্ণমান:</b> সময়: {time_bn} | পূর্ণমান: {marks_bn}<br />
-    👉 <b>সম্পূর্ণ প্রশ্ন ও উত্তরমালা দেখুন নিচের লিংকে:</b>
-  </div>
-  <!--more-->
-
-  <div style="text-align: justify; margin-bottom: 16px;">
     সরকারি ও বেসরকারি সকল নিয়োগ পরীক্ষার প্রশ্ন সমাধান, চাকরির খবর, পরীক্ষার রুটিন ও ফলাফল সবার আগে পেতে ভিজিট করুন <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যান্ড্রয়েড অ্যাপ</a>। নিচে <b>{org_bn}</b>-এর <b>{post_bn}</b> পদের নিয়োগ পরীক্ষার নির্ভুল প্রশ্ন ও সম্পূর্ণ সমাধান তুলে ধরা হলো:
   </div>
+  <!--more-->
 
   <table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 16px;" border="1" cellpadding="8">
     <tbody>
@@ -1918,18 +1921,9 @@ def build_and_publish_text_job_solution(item_meta: dict, is_draft: bool = False)
   <p style="text-align: center;"><b><span style="font-size: x-large;">{org_bn} এর {post_bn} পদের MCQ পরীক্ষার প্রশ্ন সমাধান – ২০২৬</span></b></p>
 
   <div style="text-align: justify; margin-bottom: 16px;">
-    📢 <b>{post_title}</b><br />
-    🏢 <b>প্রতিষ্ঠান:</b> {org_bn}<br />
-    💼 <b>পদের নাম:</b> {post_bn}<br />
-    📅 <b>পরীক্ষার তারিখ:</b> {exam_date}<br />
-    ⏱️ <b>সময় ও পূর্ণমান:</b> সময়: {time_bn} | পূর্ণমান: {marks}<br />
-    👉 <b>সম্পূর্ণ প্রশ্ন ও উত্তরমালা দেখুন নিচের লিংকে:</b>
-  </div>
-  <!--more-->
-
-  <div style="text-align: justify; margin-bottom: 16px;">
     সরকারি বেসরকারি সব ধরনের চাকরির খবর, নিয়োগ পরীক্ষার প্রশ্ন সমাধান ও মাসিক কারেন্ট অ্যাফেয়ার্স সবার আগে পেতে ভিজিট করুন <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যাপ</a>। নিচে <b>{org_bn}</b>-এর <b>{post_bn}</b> পদের নিয়োগ পরীক্ষার পূর্ণাঙ্গ MCQ প্রশ্ন ও নির্ভুল সমাধান তুলে ধরা হলো:
   </div>
+  <!--more-->
 
   <table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 16px;" border="1" cellpadding="8">
     <tbody>
@@ -2041,6 +2035,9 @@ def publish_next_job_question_solution(posted_urls: list) -> bool:
                 is_draft=BLOGGER_IS_DRAFT,
             )
             print(f"[JOB SOLUTION LIVE] Published {org_bn} -> {res.get('url')}")
+            save_posted_job(link)
+            save_posted_job(series[0])
+            posted_urls.extend([link, series[0]])
             ping_google_websub_hub()
             share_to_facebook_page(
                 title=f"{org_bn} পরীক্ষার প্রশ্ন সমাধান ২০২৬ - Question Solution 2026",
@@ -2054,9 +2051,6 @@ def publish_next_job_question_solution(posted_urls: list) -> bool:
                     f"📂 ক্যাটাগরি: Job Solution (প্রশ্ন সমাধান)"
                 ),
             )
-            save_posted_job(link)
-            save_posted_job(series[0])
-            posted_urls.extend([link, series[0]])
             return True
     except Exception as e:
         print(f"[WARN] Live prosnosomadhan check error: {e}")
@@ -2074,6 +2068,8 @@ def publish_next_job_question_solution(posted_urls: list) -> bool:
             print(f"[JOB SOLUTION QUEUE] Uploading {item_meta['org_bn']} ({item_meta['post_bn']}) -> {u}")
             res, src, b_url = build_and_publish_text_job_solution(item_meta, is_draft=BLOGGER_IS_DRAFT)
             print(f"[JOB SOLUTION SUCCESS] Published! URL: {res.get('url')}")
+            save_posted_job(u)
+            posted_urls.append(u)
             ping_google_websub_hub()
             share_to_facebook_page(
                 title=f"{item_meta['org_bn']} এর {item_meta['post_bn']} পদের পরীক্ষার প্রশ্ন সমাধান ২০২৬",
@@ -2087,8 +2083,6 @@ def publish_next_job_question_solution(posted_urls: list) -> bool:
                     f"📂 ক্যাটাগরি: Job Solution (পূর্ণাঙ্গ MCQ প্রশ্ন ও উত্তর)"
                 ),
             )
-            save_posted_job(u)
-            posted_urls.append(u)
             return True
         except Exception as e:
             print(f"[WARN] Failed Job Solution upload for {u}: {e}")
@@ -2110,6 +2104,8 @@ def publish_next_bcs_question_solution(posted_urls: list) -> bool:
             print(f"[BCS SCHEDULE] Uploading {bcs_item['num_bn']} তম বিসিএস প্রিলি প্রশ্ন সমাধান -> {source_url}")
             res, src = build_and_publish_bcs_item(bcs_item, is_draft=BLOGGER_IS_DRAFT)
             print(f"[BCS SUCCESS] Published {bcs_item['num_bn']}th BCS! URL: {res.get('url')}")
+            save_posted_job(src)
+            posted_urls.append(src)
             ping_google_websub_hub()
             share_to_facebook_page(
                 title=f"{bcs_item['num_bn']} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান - {bcs_item['num_en']} BCS Question Solution",
@@ -2121,8 +2117,6 @@ def publish_next_bcs_question_solution(posted_urls: list) -> bool:
                     f"📂 ক্যাটাগরি: BCS Question Solution & Job Preparation"
                 ),
             )
-            save_posted_job(src)
-            posted_urls.append(src)
             return True
         except Exception as e:
             print(f"[WARN] Failed BCS upload for {bcs_item['slug']}: {e}")
@@ -2210,6 +2204,8 @@ def publish_next_live_job_circular(posted_urls: list) -> bool:
                         is_draft=BLOGGER_IS_DRAFT,
                     )
                     print(f"[SUCCESS] Published to Blogger! Post URL: {res.get('url')}")
+                    save_posted_job(link)
+                    posted_urls.append(link)
                     ping_google_websub_hub()
                     share_to_facebook_page(
                         title=info["post_title"],
@@ -2224,8 +2220,6 @@ def publish_next_live_job_circular(posted_urls: list) -> bool:
                             f"⏳ শেষ তারিখ: {info['deadline_bn']}"
                         ),
                     )
-                    save_posted_job(link)
-                    posted_urls.append(link)
                     return True
                 else:
                     preview_file = os.path.join(BASE_DIR, "sample_post_preview.html")
@@ -2278,7 +2272,13 @@ def build_and_publish_education_notice(
         except Exception:
             uploaded_imgs.append(im_u)
 
-    post_title = f"{org_bn} {program_bn} {notice_type_bn} ২০২৬ । {org_en} {slug_prefix.replace('-', ' ').title()}"
+    en_clean = slug_prefix.replace("-", " ").title()
+    if program_bn and program_bn not in org_bn and not re.search(r"[A-Za-z]{4,}", program_bn):
+        post_title = f"{org_bn} {program_bn} {notice_type_bn} ২০২৬ । {en_clean} 2026"
+    else:
+        post_title = f"{org_bn} {notice_type_bn} ২০২৬ । {en_clean} 2026"
+    post_title = re.sub(r"\s+", " ", post_title).strip()
+
     imgs_html = "\n".join(
         f'''  <div class="separator" style="clear: both; text-align: center; margin: 16px 0;">
     <a href="{u}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;">
@@ -2298,19 +2298,10 @@ def build_and_publish_education_notice(
   </div>
 
   <p style="text-align: justify;">
-    📢 <b>{post_title}</b><br />
-    🏛️ <b>প্রতিষ্ঠান / শিক্ষা বোর্ড:</b> {org_bn} ({org_en})<br />
-    📌 <b>নোটিশের ধরন:</b> {notice_type_bn}<br />
-    📚 <b>কোর্স / বর্ষ / শ্রেণি:</b> {program_bn}<br />
-    ⏳ <b>পরীক্ষা / আবেদনের শেষ তারিখ:</b> {exam_or_deadline_bn}<br />
-    👉 <b>বিস্তারিত দেখুন ও ডাউনলোড করুন নিচের লিংকে:</b>
-  </p>
-  <!--more-->
-
-  <p style="text-align: justify;">
     <span style="color: #38761d;"><b>{org_en} Official Education Notice 2026:</b></span>
     <b>{org_bn}</b> কর্তৃক <b>{program_bn}</b>-এর অফিশিয়াল <b>{notice_type_bn}</b> প্রকাশিত হয়েছে। দেশের সকল বিশ্ববিদ্যালয়, জাতীয় বিশ্ববিদ্যালয় (NU), শিক্ষা বোর্ড (SSC/HSC), ভর্তি বিজ্ঞপ্তি, পরীক্ষার রুটিন, ফলাফল ও শিক্ষাবৃত্তির সর্বশেষ আপডেট সবার আগে পেতে নিয়মিত ভিজিট করুন <a href="{SITE_URL}">{SITE_DISPLAY}</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যাপ</a>।
   </p>
+  <!--more-->
 
   <h2 style="text-align: center; color: #38761d; font-size: 21px; border-bottom: 2px solid #38761d; padding-bottom: 6px; margin-top: 24px;">
     এক নজরে {org_bn} {notice_type_bn} ২০২৬ (Education Summary)
@@ -2412,10 +2403,12 @@ def publish_next_education_notice(posted_urls: list) -> bool:
                 continue
             try:
                 sc = scrape_job_details(link)
-                imgs_2026 = [im for im in sc.get("notice_images", []) if "/2026/" in im]
-                pdfs_2026 = [pf for pf in sc.get("pdf_links", []) if "/2026/" in pf]
+                # শুধুমাত্র অক্টোবর ২০২৬ বা সদ্য প্রকাশিত অফিশিয়াল নোটিশ ইমেজ গ্রহণ করবে
+                imgs_2026 = [im for im in sc.get("notice_images", []) if "/2026/10/" in im or "/2026/11/" in im or "/2026/12/" in im]
+                pdfs_2026 = [pf for pf in sc.get("pdf_links", []) if "/2026/10/" in pf or "/2026/11/" in pf or "/2026/12/" in pf]
                 if not imgs_2026 and not pdfs_2026:
-                    # ২০২৬ সালের অফিশিয়াল নোটিশ ইমেজ বা পিডিএফ না থাকলে স্কিপ করবে
+                    save_posted_job(link)
+                    posted_urls.append(link)
                     continue
                 if imgs_2026 and imgs_2026[0] in posted_urls:
                     save_posted_job(link)
@@ -2423,17 +2416,19 @@ def publish_next_education_notice(posted_urls: list) -> bool:
                     continue
 
                 info = extract_structured_job_info(raw_title, sc)
-                org_bn = info.get("org_name_bn") or "জাতীয় বিশ্ববিদ্যালয় ও শিক্ষা বোর্ড"
-                org_en = info.get("org_name_en") or "BD Education Notice"
-                if org_bn.lower() in live_titles_joined and info.get("qualification_bn", "").lower()[:12] in live_titles_joined:
+                dl_str = info.get("deadline_bn", "")
+                if dl_str and is_deadline_expired(dl_str, raw_title):
+                    print(f"[SKIP EXPIRED EDU] Deadline passed ({dl_str}) -> {link}")
                     save_posted_job(link)
                     posted_urls.append(link)
                     continue
 
+                org_bn = info.get("org_name_bn") or "জাতীয় বিশ্ববিদ্যালয় ও শিক্ষা বোর্ড"
+                org_en = info.get("org_name_en") or "BD Education Notice"
                 t_low = raw_title.lower()
                 extra_lbls = []
                 if "national university" in t_low or "nu " in t_low or "জাতীয় বিশ্ববিদ্যালয়" in t_low or "জাতীয় বিশ্ববিদ্যালয়" in t_low:
-                    org_bn = "জাতীয় বিশ্ববিদ্যালয় (National University)"
+                    org_bn = "জাতীয় বিশ্ববিদ্যালয় (NU)"
                     org_en = "National University (NU)"
                     extra_lbls.extend(["nu", "Honour's"])
                 if "hsc" in t_low or "এইচএসসি" in t_low or "xi class" in t_low:
@@ -2452,13 +2447,32 @@ def publish_next_education_notice(posted_urls: list) -> bool:
                     notice_type_bn = "ভর্তি বিজ্ঞপ্তি"
 
                 slug_part = link.rstrip("/").rsplit("/", 1)[-1]
+                if slug_part.replace("-", " ").lower() in live_titles_joined:
+                    save_posted_job(link)
+                    posted_urls.append(link)
+                    continue
+
+                program_bn = "অফিশিয়াল শিক্ষা ও পরীক্ষা বিজ্ঞপ্তি"
+                if "masters" in t_low:
+                    program_bn = "মাস্টার্স প্রোগ্রাম"
+                elif "degree" in t_low:
+                    program_bn = "ডিগ্রী (পাস) ও সার্টিফিকেট কোর্স"
+                elif "honours" in t_low:
+                    program_bn = "অনার্স কোর্স"
+                elif "llb" in t_low:
+                    program_bn = "এলএলবি (LLB) কোর্স"
+                elif "hsc" in t_low:
+                    program_bn = "এইচএসসি (HSC) পর্যায়"
+                elif "ssc" in t_low:
+                    program_bn = "এসএসসি (SSC) পর্যায়"
+
                 res, src, b_url = build_and_publish_education_notice(
                     org_bn=org_bn,
                     org_en=org_en,
                     notice_type_bn=notice_type_bn,
-                    program_bn=raw_title.split("|")[0].split("–")[0].strip(),
+                    program_bn=program_bn,
                     publish_date_bn=info.get("start_date_bn") or "অক্টোবর ২০২৬",
-                    exam_or_deadline_bn=info.get("deadline_bn") or "অফিশিয়াল নোটিশ দেখুন",
+                    exam_or_deadline_bn=dl_str or "অফিশিয়াল নোটিশ দেখুন",
                     official_site=info.get("official_website") or "www.nu.ac.bd",
                     notice_images=imgs_2026 if imgs_2026 else sc.get("notice_images", [])[:1],
                     pdf_links=pdfs_2026,
@@ -2468,6 +2482,11 @@ def publish_next_education_notice(posted_urls: list) -> bool:
                     is_draft=BLOGGER_IS_DRAFT,
                 )
                 print(f"[EDUCATION SUCCESS] Published {raw_title} -> {res.get('url')}")
+                save_posted_job(link)
+                posted_urls.append(link)
+                if imgs_2026:
+                    save_posted_job(imgs_2026[0])
+                    posted_urls.append(imgs_2026[0])
                 ping_google_websub_hub()
                 share_to_facebook_page(
                     title=f"{org_bn} — {program_bn} {notice_type_bn} ২০২৬",
@@ -2478,14 +2497,9 @@ def publish_next_education_notice(posted_urls: list) -> bool:
                         f"📌 নোটিশের ধরন: {notice_type_bn}\n"
                         f"📚 কোর্স / বর্ষ / শ্রেণি: {program_bn}\n"
                         f"📅 প্রকাশের তারিখ: {info.get('start_date_bn') or 'অক্টোবর ২০২৬'}\n"
-                        f"⏳ পরীক্ষা / শেষ তারিখ: {info.get('deadline_bn') or 'অফিশিয়াল নোটিশ দেখুন'}"
+                        f"⏳ পরীক্ষা / শেষ তারিখ: {dl_str or 'অফিশিয়াল নোটিশ দেখুন'}"
                     ),
                 )
-                save_posted_job(link)
-                posted_urls.append(link)
-                if imgs_2026:
-                    save_posted_job(imgs_2026[0])
-                    posted_urls.append(imgs_2026[0])
                 return True
             except Exception as e:
                 print(f"[WARN] Failed education notice {link}: {e}")
