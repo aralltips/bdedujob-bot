@@ -968,6 +968,7 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     <span style="color: #38761d;"><b>{org_en} Official Notice 2026:</b></span>
     {info['intro_paragraph_1']}
   </p>
+  <!--more-->
 
   <p style="text-align: justify;">
     {info['intro_paragraph_2']}
@@ -1082,6 +1083,7 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     <span style="color: #38761d;"><b>{org_en} Job Circular 2026:</b></span>
     {info['intro_paragraph_1']}
   </p>
+  <!--more-->
 
   <p style="text-align: justify;">
     {info['intro_paragraph_2']}
@@ -1361,6 +1363,7 @@ def build_and_publish_bcs_item(bcs_item: dict, is_draft: bool = False) -> dict:
   <div style="text-align: justify; margin-bottom: 16px;">
     সরকারি বেসরকারি সব ধরনের চাকরির খবর, বিসিএস ও ব্যাংক পরীক্ষার প্রশ্ন সমাধান, মাসিক প্রফেসর'স কারেন্ট অ্যাফেয়ার্স সবার আগে এই ওয়েবসাইটে <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">প্লে-স্টোর লিংক</a> এ গিয়ে আমাদের অফিসিয়াল অ্যাপটি ডাউনলোড করতে পারেন। তাই যেকোনো ধরনের চাকরির খবর ও বিগত বিসিএস প্রিলিমিনারি পরীক্ষার প্রশ্ন সমাধান পেতে ভিজিট করুন আমাদের ওয়েবসাইটে এবং অ্যাপে। নিচে <b>{num_bn} তম বিসিএস প্রিলিমিনারি পরীক্ষার পূর্ণাঙ্গ প্রশ্ন ও সমাধান</b> দেওয়া হলো:
   </div>
+  <!--more-->
 
   <hr />
   <hr />
@@ -1389,10 +1392,29 @@ def build_and_publish_bcs_item(bcs_item: dict, is_draft: bool = False) -> dict:
     return res, source_url
 
 
+def get_live_blogger_titles(max_results: int = 40) -> list:
+    if not BLOGGER_BLOG_ID or not BLOGGER_REFRESH_TOKEN:
+        return []
+    try:
+        access_token = get_blogger_access_token()
+        url = f"https://www.googleapis.com/blogger/v3/blogs/{BLOGGER_BLOG_ID}/posts?maxResults={max_results}"
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {access_token}"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return [p.get("title", "") for p in data.get("items", [])]
+    except Exception:
+        return []
+
+
 def publish_next_bcs_question_solution(posted_urls: list) -> bool:
+    live_titles = " | ".join(get_live_blogger_titles(50))
     for bcs_item in BCS_QUESTION_BANK_QUEUE:
         source_url = f"https://biddabari.com/bcs-question-bank/{bcs_item['slug']}"
         if source_url in posted_urls:
+            continue
+        if f"{bcs_item['num_en']} BCS Prelim" in live_titles or f"{bcs_item['num_bn']} তম বি সি এস প্রিলি" in live_titles:
+            save_posted_job(source_url)
+            posted_urls.append(source_url)
             continue
         try:
             print(f"[BCS SCHEDULE] Uploading {bcs_item['num_bn']} তম বিসিএস প্রিলি প্রশ্ন সমাধান -> {source_url}")
