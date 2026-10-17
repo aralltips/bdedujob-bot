@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-from banner_generator import generate_job_banner
+from banner_generator import generate_job_banner, generate_bcs_banner
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "posted_jobs.json")
@@ -44,12 +44,15 @@ PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.rakibtech.jo
 
 ALLOWED_BLOGGER_LABELS = [
     "All Jobs",
+    "BCS",
+    "BCS Exam Question Solution",
     "Bank Jobs",
     "Current Affairs",
     "Edcation",
     "Exam Routine",
     "Govt Jobs",
     "Privet Jobs",
+    "QUESTION SOLUTION",
     "Result",
     "Saptahik Job Paper",
     "all",
@@ -57,6 +60,37 @@ ALLOWED_BLOGGER_LABELS = [
     "job",
     "pdf",
     "pdf Zone",
+]
+
+BCS_QUESTION_BANK_QUEUE = [
+    {"num_bn": "২৪", "num_en": "24th", "slug": "24th-BCS-Question-Solution-Biddabari"},
+    {"num_bn": "২৫", "num_en": "25th", "slug": "25th-BCS-Question-Solution-Biddabari"},
+    {"num_bn": "২৬", "num_en": "26th", "slug": "26th-BCS-Question-Solution-Biddabari"},
+    {"num_bn": "২৭", "num_en": "27th", "slug": "27th-bcs-question-solution"},
+    {"num_bn": "২৮", "num_en": "28th", "slug": "28th-bcs-question-solution-pdf"},
+    {"num_bn": "২৯", "num_en": "29th", "slug": "29th-bcs-question-solution-pdf"},
+    {"num_bn": "৩০", "num_en": "30th", "slug": "30th-bcs-question-solution"},
+    {"num_bn": "৩১", "num_en": "31th", "slug": "31th-bcs-question-solution"},
+    {"num_bn": "৩২", "num_en": "32th", "slug": "32nd-bcs-question-solution-pdf"},
+    {"num_bn": "৩৩", "num_en": "33th", "slug": "cevta-job-circular-2026"},
+    {"num_bn": "৩৪", "num_en": "34th", "slug": "34th-bcs-question-solution-pdf"},
+    {"num_bn": "৩৫", "num_en": "35th", "slug": "35th-bcs-question-solution-pdf"},
+    {"num_bn": "৩৬", "num_en": "36th", "slug": "36th-bcs-question-solution-2026"},
+    {"num_bn": "৩৭", "num_en": "37th", "slug": "37th-bcs-question-solution-pdf-download"},
+    {"num_bn": "৩৮", "num_en": "38th", "slug": "38th-bcs-question-solution-pdf-download"},
+    {"num_bn": "৩৯", "num_en": "39th", "slug": "39th-bcs-question-solution"},
+    {"num_bn": "৪০", "num_en": "40th", "slug": "40th-bcs-question-solution"},
+    {"num_bn": "৪১", "num_en": "41th", "slug": "41th-bcs-question-solution-pdf"},
+    {"num_bn": "৪২", "num_en": "42th", "slug": "42th-bcs-question-solution-pdf-bcs-preliminary-question-solve-biddabari"},
+    {"num_bn": "৪৩", "num_en": "43th", "slug": "43th-bcs-question-solution"},
+    {"num_bn": "৪৪", "num_en": "44th", "slug": "44th-bcs-question-solution-pdf"},
+    {"num_bn": "৪৫", "num_en": "45th", "slug": "45th-bcs-question-solution-pdf"},
+    {"num_bn": "৪৬", "num_en": "46th", "slug": "46th-bcs-question-solution"},
+    {"num_bn": "৪৭", "num_en": "47th", "slug": "47th-bcs-question-solution"},
+    {"num_bn": "৪৮", "num_en": "48th", "slug": "48th-bcs-question-solution-pdf"},
+    {"num_bn": "৪৯", "num_en": "49th", "slug": "49th-bcs-question-solution"},
+    {"num_bn": "৫০", "num_en": "50th", "slug": "50th-BCS-Question-Solution"},
+    {"num_bn": "১৮ (বিশেষ)", "num_en": "18th Special", "slug": "18th-special-bcs-question-solution"},
 ]
 
 JOB_SOURCES = [
@@ -1232,6 +1266,148 @@ def publish_to_blogger(title: str, html_content: str, labels: list, is_draft: bo
         return json.loads(resp.read().decode("utf-8"))
 
 
+def upload_local_banner_to_cdn(local_path: str, filename: str) -> str:
+    try:
+        with open(local_path, "rb") as f:
+            b64_img = base64.b64encode(f.read()).decode("utf-8")
+        data = urllib.parse.urlencode({
+            "key": "6d207e02198a847aa98d0a2a901485a5",
+            "action": "upload",
+            "source": b64_img,
+            "format": "json",
+        }).encode("utf-8")
+        req = urllib.request.Request("https://freeimage.host/api/1/upload", data=data, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            res_json = json.loads(resp.read().decode("utf-8"))
+            cdn_url = res_json.get("image", {}).get("url")
+            if cdn_url:
+                return cdn_url
+    except Exception:
+        pass
+    try:
+        import subprocess
+        out = subprocess.check_output(
+            ["curl", "-s", "--max-time", "12", "-F", "content_type=0", "-F", f"img=@{local_path}", "https://api.pixhost.to/images"],
+            timeout=15,
+        ).decode("utf-8", errors="replace")
+        res_json = json.loads(out)
+        th_url = res_json.get("th_url", "")
+        if th_url and "/thumbs/" in th_url:
+            return re.sub(r"^https://t(\d+)\.pixhost\.to/thumbs/", r"https://img\1.pixhost.to/images/", th_url)
+    except Exception:
+        pass
+    gh_repo = os.getenv("GITHUB_REPOSITORY", "aralltips/bdedujob-bot")
+    gh_branch = os.getenv("GITHUB_REF_NAME", "main")
+    return f"https://raw.githubusercontent.com/{gh_repo}/{gh_branch}/generated_banners/{filename}"
+
+
+def build_and_publish_bcs_item(bcs_item: dict, is_draft: bool = False) -> dict:
+    num_bn = bcs_item["num_bn"]
+    num_en = bcs_item["num_en"]
+    slug = bcs_item["slug"]
+    source_url = f"https://biddabari.com/bcs-question-bank/{slug}"
+
+    req = urllib.request.Request(source_url, headers=HEADERS)
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        html = resp.read().decode("utf-8", errors="replace")
+
+    soup = BeautifulSoup(html, "html.parser")
+    bsc = soup.select_one("div.blog-slide-content")
+    if not bsc:
+        raise ValueError(f"No blog-slide-content found in {source_url}")
+
+    raw_lines = [p.get_text(" ", strip=True) for p in bsc.find_all("p", attrs={"dir": "ltr"}) if p.get_text(" ", strip=True)]
+    if len(raw_lines) < 50:
+        raw_lines = [ln.strip() for ln in bsc.get_text("\n").splitlines() if ln.strip()]
+
+    q_html_parts = []
+    for ln in raw_lines:
+        ln = re.sub(r"\s+", " ", ln).strip()
+        if not ln or "বিদ্যাবাড়ি" in ln or "বিদ্যাবাড়ি" in ln or "biddabari" in ln.lower():
+            continue
+        if re.match(r"^[০-৯0-9]{1,3}[\.।]\s*\S+", ln):
+            q_html_parts.append("<hr /><hr />")
+            q_html_parts.append(f'<p><span style="font-size: 18px;"><span style="color: green;"><strong>{ln}</strong></span></span></p>')
+        elif re.match(r"^(\(?[কখগঘabcdABCD][\.\)]|\([কখগঘabcdABCD]\))\s*", ln):
+            q_html_parts.append(f'<p><span style="font-size: 18px;">{ln}</span></p>')
+        elif re.match(r"^(উত্তর|সঠিক উত্তর|নোট|Note|Ans)", ln, re.I):
+            q_html_parts.append(f'<p><span style="font-size: 18px;"><span style="color: red;"><strong>{ln}</strong></span></span></p>')
+        elif len(ln) < 65 and any(s in ln for s in ["বাংলা", "ইংরেজি", "গণিত", "বিজ্ঞান", "আন্তর্জাতিক", "বাংলাদেশ", "মানসিক", "ভূগোল", "নৈতিকতা", "কম্পিউটার"]):
+            q_html_parts.append(
+                f'<hr /><hr /><p style="text-align: center;"><span style="font-size: 18px;"><span style="color: lavenderblush;"><strong><span style="background-color: red; padding: 2px 10px;">{ln}</span></strong></span></span></p><hr />'
+            )
+        else:
+            q_html_parts.append(f'<p><span style="font-size: 18px;">{ln}</span></p>')
+
+    os.makedirs(BANNERS_DIR, exist_ok=True)
+    safe_en = re.sub(r"[^a-z0-9]+", "-", num_en.lower()).strip("-")
+    banner_filename = f"{safe_en}-bcs-prelim-question-solution.jpg"
+    local_banner = os.path.join(BANNERS_DIR, banner_filename)
+    generate_bcs_banner(f"{num_bn} তম বিসিএস", output_path=local_banner)
+    banner_url = upload_local_banner_to_cdn(local_banner, banner_filename)
+
+    post_title = f"{num_bn} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান । {num_en} BCS Prelim Exam Question Solution"
+    questions_joined = "\n".join(q_html_parts)
+
+    post_html = f"""<div class="post-body entry-content" style="font-size: 16px; line-height: 1.75; color: #1e293b;">
+  <div class="separator" style="clear: both; text-align: center; margin-bottom: 18px;">
+    <a href="{banner_url}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;">
+      <img alt="{post_title}" title="{post_title}" border="0" data-original-height="365" data-original-width="640" src="{banner_url}" style="max-width: 100%; height: auto; border-radius: 6px;" />
+    </a>
+  </div>
+
+  <p style="text-align: center;"><b><span style="font-size: x-large;">{num_bn} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান</span></b></p>
+
+  <div style="text-align: justify; margin-bottom: 16px;">
+    সরকারি বেসরকারি সব ধরনের চাকরির খবর, বিসিএস ও ব্যাংক পরীক্ষার প্রশ্ন সমাধান, মাসিক প্রফেসর'স কারেন্ট অ্যাফেয়ার্স সবার আগে এই ওয়েবসাইটে <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">প্লে-স্টোর লিংক</a> এ গিয়ে আমাদের অফিসিয়াল অ্যাপটি ডাউনলোড করতে পারেন। তাই যেকোনো ধরনের চাকরির খবর ও বিগত বিসিএস প্রিলিমিনারি পরীক্ষার প্রশ্ন সমাধান পেতে ভিজিট করুন আমাদের ওয়েবসাইটে এবং অ্যাপে। নিচে <b>{num_bn} তম বিসিএস প্রিলিমিনারি পরীক্ষার পূর্ণাঙ্গ প্রশ্ন ও সমাধান</b> দেওয়া হলো:
+  </div>
+
+  <hr />
+  <hr />
+  <p style="text-align: center;"><span style="font-size: 20px;"><span style="color: blue;"><strong>{num_bn} তম বি সি এস প্রিলিমিনারি প্রশ্নের সমাধান ({num_en} BCS Preliminary Question Solution)</strong></span></span></p>
+  <hr />
+  <hr />
+  <p style="text-align: center;"><span style="font-size: 18px;"><span style="color: violet;"><strong>উত্তর ভুল মনে হলে সঠিক উত্তরটি কমেন্ট বা মেইল করুন, আপডেট করে দেওয়া হবে।</strong></span></span></p>
+
+  {questions_joined}
+
+  <hr />
+  <hr />
+  <p style="text-align: justify; margin-top: 18px;">
+    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>&nbsp;
+    <span style="color: #2b00fe;"><i>{num_bn} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান, {num_en} BCS Prelim Exam Question Solution, {num_bn}তম বিসিএস প্রশ্ন সমাধান, {num_en} BCS Preliminary Question and Answer PDF, bcs preliminary mcq question solution, bcs previous question solution, bdedujob.</i></span>
+  </p>
+</div>"""
+
+    labels = ["all", "BCS", "BCS Exam Question Solution", "QUESTION SOLUTION", "Edcation"]
+    res = publish_to_blogger(
+        title=post_title,
+        html_content=post_html,
+        labels=labels,
+        is_draft=is_draft,
+    )
+    return res, source_url
+
+
+def publish_next_bcs_question_solution(posted_urls: list) -> bool:
+    for bcs_item in BCS_QUESTION_BANK_QUEUE:
+        source_url = f"https://biddabari.com/bcs-question-bank/{bcs_item['slug']}"
+        if source_url in posted_urls:
+            continue
+        try:
+            print(f"[BCS SCHEDULE] Uploading {bcs_item['num_bn']} তম বিসিএস প্রিলি প্রশ্ন সমাধান -> {source_url}")
+            res, src = build_and_publish_bcs_item(bcs_item, is_draft=BLOGGER_IS_DRAFT)
+            print(f"[BCS SUCCESS] Published {bcs_item['num_bn']}th BCS! URL: {res.get('url')}")
+            ping_google_websub_hub()
+            save_posted_job(src)
+            posted_urls.append(src)
+            return True
+        except Exception as e:
+            print(f"[WARN] Failed BCS upload for {bcs_item['slug']}: {e}")
+            continue
+    return False
+
+
 def main():
     posted_urls = load_posted_jobs()
     published_count = 0
@@ -1320,6 +1496,10 @@ def main():
                     break
             except Exception as e:
                 print(f"[ERROR] Failed processing {link}: {e}")
+
+    # সিডিউল অনুযায়ী প্রতি রানে ১টি করে বিসিএস প্রিলি প্রশ্ন সমাধান (২৪তম থেকে ৫০তম পর্যন্ত) অটো আপলোড হবে
+    if BLOGGER_BLOG_ID and BLOGGER_REFRESH_TOKEN:
+        publish_next_bcs_question_solution(posted_urls)
 
 
 if __name__ == "__main__":

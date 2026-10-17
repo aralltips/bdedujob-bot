@@ -16,9 +16,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_BOLD = os.path.join(BASE_DIR, "fonts", "HindSiliguri-Bold.ttf")
 TEMPLATE_JOB = os.path.join(BASE_DIR, "templates", "job_template_base.jpg")
 TEMPLATE_SAPTAHIK = os.path.join(BASE_DIR, "templates", "saptahik_template_base.jpg")
+TEMPLATE_BCS = os.path.join(BASE_DIR, "templates", "bcs_template_base.jpg")
 
 JOB_TEMPLATE_URL = "https://iili.io/njCwnWX.jpg"
 SAPTAHIK_TEMPLATE_URL = "https://iili.io/njCwcX9.jpg"
+BCS_TEMPLATE_URL = "https://img3.pixhost.to/images/6492/786119047_bcs_template_base.jpg"
 
 DARK_GREEN = (8, 81, 51)  # Exact RGB from reference banner (#085133)
 BRIGHT_RED = (237, 28, 36)  # Exact RGB of red subtitle (#ED1C24)
@@ -35,6 +37,35 @@ def _ensure_templates():
         req = urllib.request.Request(SAPTAHIK_TEMPLATE_URL, headers=headers)
         with urllib.request.urlopen(req, timeout=20) as r, open(TEMPLATE_SAPTAHIK, "wb") as f:
             f.write(r.read())
+    if not os.path.exists(TEMPLATE_BCS):
+        req = urllib.request.Request(BCS_TEMPLATE_URL, headers=headers)
+        with urllib.request.urlopen(req, timeout=20) as r, open(TEMPLATE_BCS, "wb") as f:
+            f.write(r.read())
+
+
+def generate_bcs_banner(bcs_title_line1: str, output_path: str = "bcs_banner.jpg") -> str:
+    """
+    Generates an exact 640x365 BCS Preliminary Question Solution banner
+    identical to the user's existing 10th-23rd BCS banners.
+    Example bcs_title_line1: '২৪ তম বিসিএস'
+    """
+    _ensure_templates()
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    img = Image.open(TEMPLATE_BCS).convert("RGB")
+    draw = ImageDraw.Draw(img)
+
+    font1 = _load_font(FONT_BOLD, 52 if len(bcs_title_line1) <= 14 else 42)
+    font2 = _load_font(FONT_BOLD, 44)
+
+    t1 = bcs_title_line1.strip()
+    t2 = "পরীক্ষার প্রশ্ন সমাধান"
+    b1 = draw.textbbox((0, 0), t1, font=font1)
+    b2 = draw.textbbox((0, 0), t2, font=font2)
+    cx = 435
+    draw.text((cx - (b1[2] - b1[0]) // 2, 78), t1, font=font1, fill=(10, 10, 10))
+    draw.text((cx - (b2[2] - b2[0]) // 2, 148), t2, font=font2, fill=(10, 10, 10))
+    img.save(output_path, format="JPEG", quality=95, optimize=True)
+    return output_path
 
 
 def _load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
