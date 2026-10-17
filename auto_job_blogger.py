@@ -1433,6 +1433,7 @@ def publish_next_bcs_question_solution(posted_urls: list) -> bool:
 def main():
     posted_urls = load_posted_jobs()
     published_count = 0
+    live_titles_joined = " | ".join(get_live_blogger_titles(45)).lower()
 
     # সব ক্যাটাগরির পোস্ট যেন পালাক্রমে (Round-Robin) সমানভাবে পাবলিশ হয়
     offset = len(posted_urls) % len(JOB_SOURCES)
@@ -1455,6 +1456,14 @@ def main():
             if not link or link in posted_urls:
                 continue
 
+            # Blogger Content Policy (Regulated Goods: Tobacco, Gambling, Alcohol) filter
+            title_low = item["title"].lower()
+            if any(bad in title_low for bad in ["বিড়ি", "বিড়ি", "সিগারেট", "তামাক", "tobacco", "biri", "cigarette", "casino", "betting", "gambling"]):
+                print(f"[SKIP POLICY] Regulated goods keyword in title: {item['title']}")
+                save_posted_job(link)
+                posted_urls.append(link)
+                continue
+
             print(f"[NEW JOB FOUND] {item['title']} -> {link}")
             try:
                 scraped = scrape_job_details(link)
@@ -1472,6 +1481,11 @@ def main():
                 info = extract_structured_job_info(item["title"], scraped)
                 if is_deadline_expired(info.get("deadline_bn", ""), info.get("post_title", "")):
                     print(f"[SKIP EXPIRED] Circular deadline already passed ({info.get('deadline_bn')}) -> {link}")
+                    save_posted_job(link)
+                    posted_urls.append(link)
+                    continue
+                if info["org_name_bn"].lower() in live_titles_joined or info["org_name_en"].lower() in live_titles_joined:
+                    print(f"[SKIP DUPLICATE] Already live on blog: {info['post_title']} -> {link}")
                     save_posted_job(link)
                     posted_urls.append(link)
                     continue
