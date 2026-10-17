@@ -1155,15 +1155,20 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     </a>
   </div>
 
-  <!-- ২. ভূমিকা -->
+  <!-- ২. ভূমিকা ও ফেসবুক/RSS এসইও সামারি -->
   <p style="text-align: justify;">
-    <span style="color: #38761d;"><b>{org_en} Official Notice 2026:</b></span>
-    {info['intro_paragraph_1']}
+    📢 <b>{title_full}</b><br />
+    🏢 <b>প্রতিষ্ঠান:</b> {org_bn} ({org_en})<br />
+    📌 <b>নোটিশের ধরন:</b> {info['job_type_bn']}<br />
+    💼 <b>পদের নাম / বিষয়:</b> {info['qualification_bn']}<br />
+    ⏳ <b>পরীক্ষার তারিখ ও সময়সূচি:</b> {info['deadline_bn']}<br />
+    👉 <b>বিস্তারিত দেখুন ও ডাউনলোড করুন নিচের লিংকে:</b>
   </p>
   <!--more-->
 
   <p style="text-align: justify;">
-    {info['intro_paragraph_2']}
+    <span style="color: #38761d;"><b>{org_en} Official Notice 2026:</b></span>
+    {info['intro_paragraph_1']} {info['intro_paragraph_2']}
   </p>
 
   <!-- ৩. অফিসিয়াল অ্যাপ ও ওয়েবসাইট প্রমোশন বক্স -->
@@ -1270,15 +1275,22 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     </a>
   </div>
 
-  <!-- ২. ভূমিকা -->
+  <!-- ২. ভূমিকা ও ফেসবুক/RSS এসইও সামারি -->
   <p style="text-align: justify;">
-    <span style="color: #38761d;"><b>{org_en} Job Circular 2026:</b></span>
-    {info['intro_paragraph_1']}
+    📢 <b>{title_full}</b><br />
+    🏢 <b>প্রতিষ্ঠান:</b> {org_bn} ({org_en})<br />
+    💼 <b>চাকরির ধরণ:</b> {info['job_type_bn']}<br />
+    📌 <b>পদসংখ্যা:</b> {info['vacancy_bn']}<br />
+    🎓 <b>শিক্ষাগত যোগ্যতা:</b> {info['qualification_bn']}<br />
+    💰 <b>বেতন স্কেল:</b> {info['salary_bn']}<br />
+    ⏳ <b>শেষ তারিখ:</b> {info['deadline_bn']}<br />
+    👉 <b>বিস্তারিত দেখুন ও আবেদন করুন নিচের লিংকে:</b>
   </p>
   <!--more-->
 
   <p style="text-align: justify;">
-    {info['intro_paragraph_2']}
+    <span style="color: #38761d;"><b>{org_en} Job Circular 2026:</b></span>
+    {info['intro_paragraph_1']} {info['intro_paragraph_2']}
   </p>
 
   <!-- ৩. অফিসিয়াল অ্যাপ ও ওয়েবসাইট প্রমোশন বক্স -->
@@ -1437,17 +1449,60 @@ def ping_google_websub_hub():
             print(f"[WARN] Google Hub ping failed: {e}")
 
 
-def share_to_facebook_page(title: str, post_url: str, banner_url: str = "", summary_text: str = ""):
+def share_to_facebook_page(
+    title: str,
+    post_url: str,
+    banner_url: str = "",
+    summary_text: str = "",
+    hashtags: str = "#JobCircular2026 #BDJobs #GovtJobsBD #PrivateJobsBD #BankJobsBD #EducationBD #QuestionSolution2026 #চাকরির_খবর #নিয়োগ_বিজ্ঞপ্তি_২০২৬ #সরকারি_চাকরি #শিক্ষা_সংবাদ #bdedujob",
+):
     """
     Automatically shares the newly published Blogger post to your Facebook Page
-    when FB_PAGE_ID and FB_PAGE_ACCESS_TOKEN are set in GitHub Secrets.
+    in a high-engagement, SEO-optimized emoji format.
+    Also saves the generated SEO Facebook post to latest_facebook_posts.txt.
     """
-    if not FB_PAGE_ID or not FB_PAGE_ACCESS_TOKEN or not post_url:
+    if not post_url:
         return
+
     caption = f"📢 {title}\n\n"
     if summary_text:
-        caption += f"{summary_text}\n\n"
-    caption += f"👉 বিস্তারিত দেখুন ও আবেদন করুন নিচের লিংকে:\n🔗 {post_url}\n\n#JobCircular #BDJobs #চাকরির_খবর #bdedujob"
+        caption += f"{summary_text.strip()}\n\n"
+    caption += (
+        f"👉 বিস্তারিত দেখুন ও আবেদন করুন নিচের লিংকে:\n"
+        f"🔗 {post_url}\n\n"
+        f"📲 প্রতিদিনের সকল সরকারি ও বেসরকারি চাকরির খবর, পরীক্ষার রুটিন, ফলাফল, প্রশ্ন সমাধান ও শিক্ষা সংক্রান্ত আপডেট সবার আগে পেতে আমাদের পেজটি ফলো করে রাখুন।\n\n"
+        f"{hashtags}"
+    )
+
+    try:
+        fb_log_path = os.path.join(BASE_DIR, "latest_facebook_posts.txt")
+        with open(fb_log_path, "a", encoding="utf-8") as f:
+            f.write("=" * 70 + "\n")
+            f.write(caption + "\n")
+    except Exception:
+        pass
+
+    if not FB_PAGE_ID or not FB_PAGE_ACCESS_TOKEN:
+        print("[FACEBOOK INFO] FB_PAGE_ACCESS_TOKEN not set in Secrets; saved SEO caption to latest_facebook_posts.txt")
+        return
+
+    # If the user provided a User Access Token instead of a Page Access Token, automatically exchange it for the Page Access Token
+    effective_token = FB_PAGE_ACCESS_TOKEN.strip()
+    try:
+        acct_url = f"https://graph.facebook.com/v21.0/me/accounts?access_token={ urllib.parse.quote(effective_token) }"
+        req_acct = urllib.request.Request(acct_url, headers=HEADERS)
+        with urllib.request.urlopen(req_acct, timeout=12) as r_acct:
+            acct_data = json.loads(r_acct.read().decode("utf-8"))
+            for pg in acct_data.get("data", []):
+                if str(pg.get("id")) == str(FB_PAGE_ID) or "recent" in pg.get("name", "").lower():
+                    if pg.get("access_token"):
+                        effective_token = pg["access_token"]
+                        break
+            else:
+                if acct_data.get("data") and acct_data["data"][0].get("access_token"):
+                    effective_token = acct_data["data"][0]["access_token"]
+    except Exception:
+        pass
 
     for target in ["me", FB_PAGE_ID]:
         if not target:
@@ -1457,12 +1512,12 @@ def share_to_facebook_page(title: str, post_url: str, banner_url: str = "", summ
             data = urllib.parse.urlencode({
                 "message": caption,
                 "link": post_url,
-                "access_token": FB_PAGE_ACCESS_TOKEN,
+                "access_token": effective_token,
             }).encode("utf-8")
             req = urllib.request.Request(fb_api_url, data=data, method="POST")
             with urllib.request.urlopen(req, timeout=20) as resp:
                 res_json = json.loads(resp.read().decode("utf-8"))
-                print(f"[FACEBOOK SHARE] Auto-shared to Facebook Page! Post ID: {res_json.get('id')}")
+                print(f"[FACEBOOK SHARE] Auto-shared SEO post to Facebook Page! Post ID: {res_json.get('id')}")
                 return
         except Exception as e:
             print(f"[WARN] Facebook Page auto-share ({target}) failed: {e}")
@@ -1584,9 +1639,17 @@ def build_and_publish_bcs_item(bcs_item: dict, is_draft: bool = False) -> dict:
   <p style="text-align: center;"><b><span style="font-size: x-large;">{num_bn} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান</span></b></p>
 
   <div style="text-align: justify; margin-bottom: 16px;">
-    সরকারি বেসরকারি সব ধরনের চাকরির খবর, বিসিএস ও ব্যাংক পরীক্ষার প্রশ্ন সমাধান, মাসিক প্রফেসর'স কারেন্ট অ্যাফেয়ার্স সবার আগে এই ওয়েবসাইটে <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">প্লে-স্টোর লিংক</a> এ গিয়ে আমাদের অফিসিয়াল অ্যাপটি ডাউনলোড করতে পারেন। তাই যেকোনো ধরনের চাকরির খবর ও বিগত বিসিএস প্রিলিমিনারি পরীক্ষার প্রশ্ন সমাধান পেতে ভিজিট করুন আমাদের ওয়েবসাইটে এবং অ্যাপে। নিচে <b>{num_bn} তম বিসিএস প্রিলিমিনারি পরীক্ষার পূর্ণাঙ্গ প্রশ্ন ও সমাধান</b> দেওয়া হলো:
+    📢 <b>{post_title}</b><br />
+    🏛️ <b>প্রতিষ্ঠান:</b> বাংলাদেশ সরকারি কর্ম কমিশন (BPSC)<br />
+    📘 <b>পরীক্ষার নাম:</b> {num_bn} তম বিসিএস প্রিলিমিনারি পরীক্ষা ({num_en} BCS Prelim)<br />
+    💯 <b>পূর্ণমান:</b> ২০০ (পূর্ণাঙ্গ MCQ প্রশ্ন ও নির্ভুল সমাধান)<br />
+    👉 <b>সম্পূর্ণ প্রশ্ন ও উত্তরমালা দেখুন নিচের লিংকে:</b>
   </div>
   <!--more-->
+
+  <div style="text-align: justify; margin-bottom: 16px;">
+    সরকারি বেসরকারি সব ধরনের চাকরির খবর, বিসিএস ও ব্যাংক পরীক্ষার প্রশ্ন সমাধান, মাসিক প্রফেসর'স কারেন্ট অ্যাফেয়ার্স সবার আগে এই ওয়েবসাইটে <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">প্লে-স্টোর লিংক</a> এ গিয়ে আমাদের অফিসিয়াল অ্যাপটি ডাউনলোড করতে পারেন। নিচে <b>{num_bn} তম বিসিএস প্রিলিমিনারি পরীক্ষার পূর্ণাঙ্গ প্রশ্ন ও সমাধান</b> দেওয়া হলো:
+  </div>
 
   <hr />
   <hr />
@@ -1724,17 +1787,26 @@ def build_and_publish_image_job_solution(
     )
 
     post_html = f"""<div class="post-body entry-content" style="font-size: 16px; line-height: 1.75; color: #1e293b;">
-  <p style="text-align: center;"><b><span style="font-size: x-large;">{org_bn} এর {post_bn} পদের পরীক্ষার প্রশ্ন সমাধান ২০২৬</span></b></p>
-
-  <div style="text-align: justify; margin-bottom: 16px;">
-    সরকারি ও বেসরকারি সকল নিয়োগ পরীক্ষার প্রশ্ন সমাধান, চাকরির খবর, পরীক্ষার রুটিন ও ফলাফল সবার আগে পেতে ভিজিট করুন <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যান্ড্রয়েড অ্যাপ</a>। সম্প্রতি অনুষ্ঠিত <b>{org_bn}</b>-এর <b>{post_bn}</b> পদের নিয়োগ পরীক্ষার নির্ভুল প্রশ্ন ও সম্পূর্ণ সমাধান নিচে পরীক্ষার্থীদের সুবিধার্থে তুলে ধরা হলো:
-  </div>
-  <!--more-->
-
   <div class="separator" style="clear: both; text-align: center; margin-bottom: 18px;">
     <a href="{banner_url}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;">
       <img alt="{post_title}" title="{post_title}" border="0" data-original-height="445" data-original-width="800" src="{banner_url}" style="max-width: 100%; height: auto; border-radius: 6px;" />
     </a>
+  </div>
+
+  <p style="text-align: center;"><b><span style="font-size: x-large;">{org_bn} এর {post_bn} পদের পরীক্ষার প্রশ্ন সমাধান ২০২৬</span></b></p>
+
+  <div style="text-align: justify; margin-bottom: 16px;">
+    📢 <b>{post_title}</b><br />
+    🏢 <b>প্রতিষ্ঠান:</b> {org_bn}<br />
+    💼 <b>পদের নাম:</b> {post_bn}<br />
+    📅 <b>পরীক্ষার তারিখ:</b> {exam_date_bn}<br />
+    ⏱️ <b>সময় ও পূর্ণমান:</b> সময়: {time_bn} | পূর্ণমান: {marks_bn}<br />
+    👉 <b>সম্পূর্ণ প্রশ্ন ও উত্তরমালা দেখুন নিচের লিংকে:</b>
+  </div>
+  <!--more-->
+
+  <div style="text-align: justify; margin-bottom: 16px;">
+    সরকারি ও বেসরকারি সকল নিয়োগ পরীক্ষার প্রশ্ন সমাধান, চাকরির খবর, পরীক্ষার রুটিন ও ফলাফল সবার আগে পেতে ভিজিট করুন <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যান্ড্রয়েড অ্যাপ</a>। নিচে <b>{org_bn}</b>-এর <b>{post_bn}</b> পদের নিয়োগ পরীক্ষার নির্ভুল প্রশ্ন ও সম্পূর্ণ সমাধান তুলে ধরা হলো:
   </div>
 
   <table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 16px;" border="1" cellpadding="8">
@@ -1837,17 +1909,26 @@ def build_and_publish_text_job_solution(item_meta: dict, is_draft: bool = False)
     questions_joined = "\n".join(q_html_parts)
 
     post_html = f"""<div class="post-body entry-content" style="font-size: 16px; line-height: 1.75; color: #1e293b;">
-  <p style="text-align: center;"><b><span style="font-size: x-large;">{org_bn} এর {post_bn} পদের MCQ পরীক্ষার প্রশ্ন সমাধান – ২০২৬</span></b></p>
-
-  <div style="text-align: justify; margin-bottom: 16px;">
-    সরকারি বেসরকারি সব ধরনের চাকরির খবর, নিয়োগ পরীক্ষার প্রশ্ন সমাধান ও মাসিক কারেন্ট অ্যাফেয়ার্স সবার আগে পেতে ভিজিট করুন <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যাপ</a>। নিচে <b>{org_bn}</b>-এর <b>{post_bn}</b> পদের নিয়োগ পরীক্ষার পূর্ণাঙ্গ MCQ প্রশ্ন ও নির্ভুল সমাধান তুলে ধরা হলো:
-  </div>
-  <!--more-->
-
   <div class="separator" style="clear: both; text-align: center; margin-bottom: 18px;">
     <a href="{banner_url}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;">
       <img alt="{post_title}" title="{post_title}" border="0" data-original-height="445" data-original-width="800" src="{banner_url}" style="max-width: 100%; height: auto; border-radius: 6px;" />
     </a>
+  </div>
+
+  <p style="text-align: center;"><b><span style="font-size: x-large;">{org_bn} এর {post_bn} পদের MCQ পরীক্ষার প্রশ্ন সমাধান – ২০২৬</span></b></p>
+
+  <div style="text-align: justify; margin-bottom: 16px;">
+    📢 <b>{post_title}</b><br />
+    🏢 <b>প্রতিষ্ঠান:</b> {org_bn}<br />
+    💼 <b>পদের নাম:</b> {post_bn}<br />
+    📅 <b>পরীক্ষার তারিখ:</b> {exam_date}<br />
+    ⏱️ <b>সময় ও পূর্ণমান:</b> সময়: {time_bn} | পূর্ণমান: {marks}<br />
+    👉 <b>সম্পূর্ণ প্রশ্ন ও উত্তরমালা দেখুন নিচের লিংকে:</b>
+  </div>
+  <!--more-->
+
+  <div style="text-align: justify; margin-bottom: 16px;">
+    সরকারি বেসরকারি সব ধরনের চাকরির খবর, নিয়োগ পরীক্ষার প্রশ্ন সমাধান ও মাসিক কারেন্ট অ্যাফেয়ার্স সবার আগে পেতে ভিজিট করুন <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যাপ</a>। নিচে <b>{org_bn}</b>-এর <b>{post_bn}</b> পদের নিয়োগ পরীক্ষার পূর্ণাঙ্গ MCQ প্রশ্ন ও নির্ভুল সমাধান তুলে ধরা হলো:
   </div>
 
   <table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 16px;" border="1" cellpadding="8">
@@ -1962,10 +2043,16 @@ def publish_next_job_question_solution(posted_urls: list) -> bool:
             print(f"[JOB SOLUTION LIVE] Published {org_bn} -> {res.get('url')}")
             ping_google_websub_hub()
             share_to_facebook_page(
-                title=f"{org_bn} পরীক্ষার প্রশ্ন সমাধান ২০২৬",
+                title=f"{org_bn} পরীক্ষার প্রশ্ন সমাধান ২০২৬ - Question Solution 2026",
                 post_url=res.get("url", ""),
                 banner_url=b_url,
-                summary_text=f"✅ {org_bn} নিয়োগ পরীক্ষার সম্পূর্ণ প্রশ্ন ও নির্ভুল সমাধান দেখুন আমাদের ওয়েবসাইটে।",
+                summary_text=(
+                    f"🏢 প্রতিষ্ঠান: {org_bn}\n"
+                    f"📌 পরীক্ষার নাম: নিয়োগ পরীক্ষা ২০২৬\n"
+                    f"📅 পরীক্ষার তারিখ: অক্টোবর ২০২৬\n"
+                    f"💯 পূর্ণমান: ১০০ (১০০% নির্ভুল উত্তরমালা)\n"
+                    f"📂 ক্যাটাগরি: Job Solution (প্রশ্ন সমাধান)"
+                ),
             )
             save_posted_job(link)
             save_posted_job(series[0])
@@ -1992,7 +2079,13 @@ def publish_next_job_question_solution(posted_urls: list) -> bool:
                 title=f"{item_meta['org_bn']} এর {item_meta['post_bn']} পদের পরীক্ষার প্রশ্ন সমাধান ২০২৬",
                 post_url=res.get("url", ""),
                 banner_url=b_url,
-                summary_text=f"📝 {item_meta['org_bn']} ({item_meta['post_bn']}) নিয়োগ পরীক্ষার পূর্ণাঙ্গ MCQ প্রশ্ন ও সমাধান দেখুন।",
+                summary_text=(
+                    f"🏢 প্রতিষ্ঠান: {item_meta['org_bn']}\n"
+                    f"💼 পদের নাম: {item_meta['post_bn']}\n"
+                    f"📅 পরীক্ষার তারিখ: {item_meta.get('exam_date', '২০২৬')}\n"
+                    f"⏱️ সময় ও পূর্ণমান: {item_meta.get('time', '৬০ মিনিট')} | পূর্ণমান: {item_meta.get('marks', '১০০')}\n"
+                    f"📂 ক্যাটাগরি: Job Solution (পূর্ণাঙ্গ MCQ প্রশ্ন ও উত্তর)"
+                ),
             )
             save_posted_job(u)
             posted_urls.append(u)
@@ -2019,9 +2112,14 @@ def publish_next_bcs_question_solution(posted_urls: list) -> bool:
             print(f"[BCS SUCCESS] Published {bcs_item['num_bn']}th BCS! URL: {res.get('url')}")
             ping_google_websub_hub()
             share_to_facebook_page(
-                title=f"{bcs_item['num_bn']} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান",
+                title=f"{bcs_item['num_bn']} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান - {bcs_item['num_en']} BCS Question Solution",
                 post_url=res.get("url", ""),
-                summary_text=f"📘 {bcs_item['num_bn']} তম বিসিএস প্রিলিমিনারি পরীক্ষার পূর্ণাঙ্গ প্রশ্ন ও নির্ভুল সমাধান দেখুন আমাদের ওয়েবসাইটে।",
+                summary_text=(
+                    f"🏛️ প্রতিষ্ঠান: বাংলাদেশ সরকারি কর্ম কমিশন (BPSC)\n"
+                    f"📘 পরীক্ষার নাম: {bcs_item['num_bn']} তম বিসিএস প্রিলিমিনারি পরীক্ষা\n"
+                    f"💯 পূর্ণমান: ২০০ (পূর্ণাঙ্গ MCQ প্রশ্ন ও নির্ভুল সমাধান)\n"
+                    f"📂 ক্যাটাগরি: BCS Question Solution & Job Preparation"
+                ),
             )
             save_posted_job(src)
             posted_urls.append(src)
@@ -2117,7 +2215,14 @@ def publish_next_live_job_circular(posted_urls: list) -> bool:
                         title=info["post_title"],
                         post_url=res.get("url", ""),
                         banner_url=banner_url,
-                        summary_text=f"🏢 প্রতিষ্ঠান: {info['org_name_bn']}\n📌 পদসংখ্যা: {info['vacancy_bn']}\n⏳ শেষ তারিখ: {info['deadline_bn']}",
+                        summary_text=(
+                            f"🏢 প্রতিষ্ঠান: {info['org_name_bn']}\n"
+                            f"💼 চাকরির ধরণ: {info.get('job_type_bn', 'বিজ্ঞপ্তি অনুযায়ী')}\n"
+                            f"📌 পদসংখ্যা: {info['vacancy_bn']}\n"
+                            f"🎓 শিক্ষাগত যোগ্যতা: {info.get('qualification_bn', 'বিজ্ঞপ্তি অনুযায়ী')}\n"
+                            f"💰 বেতন স্কেল: {info.get('salary_bn', 'বিজ্ঞপ্তি অনুযায়ী')}\n"
+                            f"⏳ শেষ তারিখ: {info['deadline_bn']}"
+                        ),
                     )
                     save_posted_job(link)
                     posted_urls.append(link)
@@ -2193,10 +2298,19 @@ def build_and_publish_education_notice(
   </div>
 
   <p style="text-align: justify;">
+    📢 <b>{post_title}</b><br />
+    🏛️ <b>প্রতিষ্ঠান / শিক্ষা বোর্ড:</b> {org_bn} ({org_en})<br />
+    📌 <b>নোটিশের ধরন:</b> {notice_type_bn}<br />
+    📚 <b>কোর্স / বর্ষ / শ্রেণি:</b> {program_bn}<br />
+    ⏳ <b>পরীক্ষা / আবেদনের শেষ তারিখ:</b> {exam_or_deadline_bn}<br />
+    👉 <b>বিস্তারিত দেখুন ও ডাউনলোড করুন নিচের লিংকে:</b>
+  </p>
+  <!--more-->
+
+  <p style="text-align: justify;">
     <span style="color: #38761d;"><b>{org_en} Official Education Notice 2026:</b></span>
     <b>{org_bn}</b> কর্তৃক <b>{program_bn}</b>-এর অফিশিয়াল <b>{notice_type_bn}</b> প্রকাশিত হয়েছে। দেশের সকল বিশ্ববিদ্যালয়, জাতীয় বিশ্ববিদ্যালয় (NU), শিক্ষা বোর্ড (SSC/HSC), ভর্তি বিজ্ঞপ্তি, পরীক্ষার রুটিন, ফলাফল ও শিক্ষাবৃত্তির সর্বশেষ আপডেট সবার আগে পেতে নিয়মিত ভিজিট করুন <a href="{SITE_URL}">{SITE_DISPLAY}</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যাপ</a>।
   </p>
-  <!--more-->
 
   <h2 style="text-align: center; color: #38761d; font-size: 21px; border-bottom: 2px solid #38761d; padding-bottom: 6px; margin-top: 24px;">
     এক নজরে {org_bn} {notice_type_bn} ২০২৬ (Education Summary)
@@ -2356,10 +2470,16 @@ def publish_next_education_notice(posted_urls: list) -> bool:
                 print(f"[EDUCATION SUCCESS] Published {raw_title} -> {res.get('url')}")
                 ping_google_websub_hub()
                 share_to_facebook_page(
-                    title=f"{org_bn} — {notice_type_bn} ২০২৬",
+                    title=f"{org_bn} — {program_bn} {notice_type_bn} ২০২৬",
                     post_url=res.get("url", ""),
                     banner_url=b_url,
-                    summary_text=f"🎓 {raw_title}\n📌 ধরন: {notice_type_bn}\nবিস্তারিত অফিশিয়াল নোটিশ দেখুন আমাদের ওয়েবসাইটে।",
+                    summary_text=(
+                        f"🏛️ প্রতিষ্ঠান / শিক্ষা বোর্ড: {org_bn}\n"
+                        f"📌 নোটিশের ধরন: {notice_type_bn}\n"
+                        f"📚 কোর্স / বর্ষ / শ্রেণি: {program_bn}\n"
+                        f"📅 প্রকাশের তারিখ: {info.get('start_date_bn') or 'অক্টোবর ২০২৬'}\n"
+                        f"⏳ পরীক্ষা / শেষ তারিখ: {info.get('deadline_bn') or 'অফিশিয়াল নোটিশ দেখুন'}"
+                    ),
                 )
                 save_posted_job(link)
                 posted_urls.append(link)
