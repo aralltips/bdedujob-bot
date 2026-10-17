@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-from banner_generator import generate_job_banner, generate_bcs_banner
+from banner_generator import generate_job_banner, generate_bcs_banner, generate_job_solution_banner
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "posted_jobs.json")
@@ -50,9 +50,11 @@ ALLOWED_BLOGGER_LABELS = [
     "BCS Exam Question Solution",
     "Bank Jobs",
     "Current Affairs",
+    "EXAM INFO",
     "Edcation",
     "Exam Routine",
     "Govt Jobs",
+    "Job Solution",
     "Privet Jobs",
     "QUESTION SOLUTION",
     "Result",
@@ -62,6 +64,162 @@ ALLOWED_BLOGGER_LABELS = [
     "job",
     "pdf",
     "pdf Zone",
+]
+
+JOB_SOLUTION_QUEUE = [
+    {
+        "org_bn": "মন্ত্রিপরিষদ বিভাগ (Cabinet Division)",
+        "org_short": "cabinet-division",
+        "post_bn": "অফিস সহায়ক",
+        "exam_date": "২৮ আগস্ট ২০২৬",
+        "marks": "৭০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/cabinet-division-question-solution-2026-office-support-staff",
+    },
+    {
+        "org_bn": "বাংলাদেশ কর্মচারী কল্যাণ বোর্ড (BKKB)",
+        "org_short": "bkkb-office-assistant",
+        "post_bn": "অফিস সহকারী কাম কম্পিউটার মুদ্রাক্ষরিক",
+        "exam_date": "২৯ আগস্ট ২০২৬",
+        "marks": "১০০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/bkkb-question-solution-2026-office-assistant-computer-typist-1-post",
+    },
+    {
+        "org_bn": "জনশক্তি কর্মসংস্থান ও প্রশিক্ষণ ব্যুরো (BMET)",
+        "org_short": "bmet-assistant-director",
+        "post_bn": "সহকারী পরিচালক",
+        "exam_date": "২৫ আগস্ট ২০২৬",
+        "marks": "১০০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/bmet-assistant-director-question-solution-2026",
+    },
+    {
+        "org_bn": "স্বাস্থ্য ও পরিবার কল্যাণ মন্ত্রণালয় (PSC)",
+        "org_short": "psc-social-welfare-officer",
+        "post_bn": "সমাজ কল্যাণ কর্মকর্তা",
+        "exam_date": "০২ সেপ্টেম্বর ২০২৬",
+        "marks": "১০০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/social-welfare-officer-question-solution-2026",
+    },
+    {
+        "org_bn": "গ্যাস ট্রান্সমিশন কোম্পানি লিমিটেড (GTCL)",
+        "org_short": "gtcl-receptionist",
+        "post_bn": "রিসিপশনিস্ট",
+        "exam_date": "২২ আগস্ট ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/Non-Cadre-question-bank/gtcl-mcq-question-solution-2026",
+    },
+    {
+        "org_bn": "স্বাস্থ্য ও পরিবার কল্যাণ মন্ত্রণালয় (MOHFW)",
+        "org_short": "mohfw-assistant-engineer",
+        "post_bn": "সহকারী প্রকৌশলী (সিভিল)",
+        "exam_date": "২০২৬",
+        "marks": "১০০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/Non-Cadre-question-bank/mohfw-assistant-engineer-civil-question-solution-2026",
+    },
+    {
+        "org_bn": "বাংলাদেশ ব্যাংক (Bangladesh Bank)",
+        "org_short": "bangladesh-bank-ad",
+        "post_bn": "সহকারী পরিচালক (AD)",
+        "exam_date": "১৭ জুলাই ২০২৬",
+        "marks": "১০০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/Bank-question-bank/bangladesh-bank-assistant-director-question-solution-2026",
+    },
+    {
+        "org_bn": "সমন্বিত ৭ ব্যাংক (Combined 7 Bank)",
+        "org_short": "combined-7-bank-cash",
+        "post_bn": "অফিসার (ক্যাশ)",
+        "exam_date": "০৩ জুলাই ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/Bank-question-bank/combined-7-bank-officer-cash-question-solution-2026",
+    },
+    {
+        "org_bn": "বাংলাদেশ নৌবাহিনী (BNDCP)",
+        "org_short": "bndcp-higher-assistant",
+        "post_bn": "বেসামরিক উচ্চমান সহকারী",
+        "exam_date": "আগস্ট ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/bndcp-higher-assistant-question-mcq-solution-2026",
+    },
+    {
+        "org_bn": "বাংলাদেশ পরমাণু শক্তি কমিশন (BAEC)",
+        "org_short": "baec-lab-attendant",
+        "post_bn": "ল্যাবরেটরি এটেনডেন্ট",
+        "exam_date": "৩১ জুলাই ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/baec-question-mcq-solution-2026",
+    },
+    {
+        "org_bn": "প্রতিরক্ষা মন্ত্রণালয় (MOD)",
+        "org_short": "mod-storeman",
+        "post_bn": "বেসামরিক স্টোরম্যান",
+        "exam_date": "০৭ আগস্ট ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/mod-storeman-question-mcq-solution-2026",
+    },
+    {
+        "org_bn": "পরিসংখ্যান ও তথ্য ব্যবস্থাপনা বিভাগ (SID)",
+        "org_short": "sid-office-sohayok",
+        "post_bn": "অফিস সহায়ক",
+        "exam_date": "২০২৬",
+        "marks": "৪০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/sid-question-solution-2026-office-sohayok",
+    },
+    {
+        "org_bn": "যুব উন্নয়ন অধিদপ্তর (DYD)",
+        "org_short": "dyd-office-sohayok",
+        "post_bn": "অফিস সহায়ক",
+        "exam_date": "২৭ জুন ২০২৬",
+        "marks": "৭০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/11-20-Grade-question-bank/dyd-office-sohayok-question-solution-2026",
+    },
+    {
+        "org_bn": "বাংলাদেশ ক্ষুদ্র ও কুটির শিল্প কর্পোরেশন (BSCIC)",
+        "org_short": "bscic-promotion-officer",
+        "post_bn": "প্রমোশন অফিসার",
+        "exam_date": "১৯ জুন ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/Non-Cadre-question-bank/bscic-promotion-officer-mcq-question-solution-2026",
+    },
+    {
+        "org_bn": "৮ম এনটিআরসিএ (8th NTRCA)",
+        "org_short": "8th-ntrca-head-teacher",
+        "post_bn": "প্রধান শিক্ষক",
+        "exam_date": "১৮ এপ্রিল ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/NTRCA-question-bank/8th-ntrca-head-teacher-question-solution-2026",
+    },
+    {
+        "org_bn": "৮ম এনটিআরসিএ (8th NTRCA)",
+        "org_short": "8th-ntrca-principal",
+        "post_bn": "অধ্যক্ষ",
+        "exam_date": "১৮ এপ্রিল ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/NTRCA-question-bank/8th-ntrca-principal-question-solution-2026",
+    },
+    {
+        "org_bn": "৮ম এনটিআরসিএ (8th NTRCA)",
+        "org_short": "8th-ntrca-super",
+        "post_bn": "সুপার (দাখিল মাদ্রাসা)",
+        "exam_date": "১৮ এপ্রিল ২০২৬",
+        "marks": "৮০",
+        "time": "৬০ মিনিট",
+        "url": "https://biddabari.com/NTRCA-question-bank/8th-ntrca-super-dakhil-madrasha-question-solution-2026",
+    },
 ]
 
 BCS_QUESTION_BANK_QUEUE = [
@@ -1439,6 +1597,380 @@ def get_live_blogger_titles(max_results: int = 40) -> list:
         return []
 
 
+def clean_and_upload_solution_image(img_url: str, prefix_slug: str, idx: int) -> str:
+    """Downloads a question solution image, removes any light-grey center watermark, and uploads to CDN."""
+    try:
+        from PIL import Image
+        import numpy as np
+
+        os.makedirs(BANNERS_DIR, exist_ok=True)
+        fname = f"{prefix_slug}-page-{idx}.jpg"
+        local_path = os.path.join(BANNERS_DIR, fname)
+        req = urllib.request.Request(img_url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=20) as resp, open(local_path, "wb") as f:
+            f.write(resp.read())
+
+        im = Image.open(local_path).convert("RGB")
+        arr = np.array(im)
+        h, w, _ = arr.shape
+        y0, y1 = int(h * 0.28), int(h * 0.76)
+        x0, x1 = int(w * 0.18), int(w * 0.82)
+        sub = arr[y0:y1, x0:x1]
+        mask = (sub[:, :, 0] > 125) & (sub[:, :, 1] > 125) & (sub[:, :, 2] > 125)
+        sub[mask] = [255, 255, 255]
+        arr[y0:y1, x0:x1] = sub
+        Image.fromarray(arr).save(local_path, format="JPEG", quality=92, optimize=True)
+        return upload_local_banner_to_cdn(local_path, fname)
+    except Exception:
+        return img_url
+
+
+def extract_first_solution_image_series(soup: BeautifulSoup) -> list:
+    """Extracts the primary contiguous series of current-year solution images from prosnosomadhan.com."""
+    ec = soup.select_one(".entry-content")
+    if not ec:
+        return []
+    raw_imgs = []
+    for img in ec.find_all("img"):
+        src = (img.get("src") or img.get("data-src") or "").strip()
+        if not src or "/uploads/2026/" not in src:
+            continue
+        raw_imgs.append(src)
+    if not raw_imgs:
+        return []
+
+    def _stem_prefix(u: str) -> str:
+        base = u.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+        base = re.sub(r"[-_]?(scaled|\d+)$", "", base, flags=re.I)
+        base = re.sub(r"[-_]?\d+$", "", base)
+        return base.lower()
+
+    first_prefix = _stem_prefix(raw_imgs[0])
+    series = []
+    for u in raw_imgs:
+        if _stem_prefix(u) == first_prefix:
+            if u not in series:
+                series.append(u)
+        elif series:
+            break
+    return series[:8]
+
+
+def build_and_publish_image_job_solution(
+    org_bn: str,
+    post_bn: str,
+    exam_date_bn: str,
+    marks_bn: str,
+    time_bn: str,
+    solution_image_urls: list,
+    source_url: str,
+    slug_prefix: str = "job-solution-2026",
+    is_draft: bool = False,
+) -> tuple:
+    os.makedirs(BANNERS_DIR, exist_ok=True)
+    safe_slug = re.sub(r"[^a-z0-9]+", "-", slug_prefix.lower()).strip("-") or "job-solution-2026"
+    banner_filename = f"{safe_slug}-banner.jpg"
+    local_banner = os.path.join(BANNERS_DIR, banner_filename)
+    exam_line = f"{post_bn} পরীক্ষার" if len(post_bn) <= 26 else "নিয়োগ MCQ পরীক্ষার"
+    generate_job_solution_banner(org_name_bn=org_bn, exam_line_bn=exam_line, output_path=local_banner)
+    banner_url = upload_local_banner_to_cdn(local_banner, banner_filename)
+
+    uploaded_pages = []
+    for i, img_u in enumerate(solution_image_urls, 1):
+        cdn_u = clean_and_upload_solution_image(img_u, safe_slug, i)
+        uploaded_pages.append(cdn_u)
+
+    post_title = f"{org_bn} এর {post_bn} পদের পরীক্ষার প্রশ্ন সমাধান ২০২৬ । {slug_prefix.replace('-', ' ').title()} Question Solution 2026"
+    pages_html = "\n".join(
+        f'''  <div class="separator" style="clear: both; text-align: center; margin: 16px 0;">
+    <p style="font-weight: bold; color: #0b5394; margin-bottom: 6px;">প্রশ্ন ও সমাধান পৃষ্ঠা - {i}</p>
+    <a href="{u}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;">
+      <img alt="{post_title} - Page {i}" title="{post_title} - Page {i}" border="0" src="{u}" style="max-width: 100%; height: auto; border: 1px solid #cbd5e1; border-radius: 6px;" />
+    </a>
+  </div>'''
+        for i, u in enumerate(uploaded_pages, 1)
+    )
+
+    post_html = f"""<div class="post-body entry-content" style="font-size: 16px; line-height: 1.75; color: #1e293b;">
+  <p style="text-align: center;"><b><span style="font-size: x-large;">{org_bn} এর {post_bn} পদের পরীক্ষার প্রশ্ন সমাধান ২০২৬</span></b></p>
+
+  <div style="text-align: justify; margin-bottom: 16px;">
+    সরকারি ও বেসরকারি সকল নিয়োগ পরীক্ষার প্রশ্ন সমাধান, চাকরির খবর, পরীক্ষার রুটিন ও ফলাফল সবার আগে পেতে ভিজিট করুন <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যান্ড্রয়েড অ্যাপ</a>। সম্প্রতি অনুষ্ঠিত <b>{org_bn}</b>-এর <b>{post_bn}</b> পদের নিয়োগ পরীক্ষার নির্ভুল প্রশ্ন ও সম্পূর্ণ সমাধান নিচে পরীক্ষার্থীদের সুবিধার্থে তুলে ধরা হলো:
+  </div>
+  <!--more-->
+
+  <div class="separator" style="clear: both; text-align: center; margin-bottom: 18px;">
+    <a href="{banner_url}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;">
+      <img alt="{post_title}" title="{post_title}" border="0" data-original-height="445" data-original-width="800" src="{banner_url}" style="max-width: 100%; height: auto; border-radius: 6px;" />
+    </a>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 16px;" border="1" cellpadding="8">
+    <tbody>
+      <tr style="background-color: #0d6b88; color: #ffffff;">
+        <th colspan="2" style="text-align: center; padding: 10px;">পরীক্ষার সংক্ষিপ্ত তথ্য (Exam Overview)</th>
+      </tr>
+      <tr>
+        <td style="width: 38%; font-weight: bold; background-color: #f8fafc;">প্রতিষ্ঠানের নাম</td>
+        <td>{org_bn}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold; background-color: #f8fafc;">পদের নাম</td>
+        <td>{post_bn}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold; background-color: #f8fafc;">পরীক্ষার তারিখ</td>
+        <td>{exam_date_bn}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold; background-color: #f8fafc;">সময় ও পূর্ণমান</td>
+        <td>সময়: {time_bn} | পূর্ণমান: {marks_bn}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold; background-color: #f8fafc;">ক্যাটাগরি</td>
+        <td><a href="https://bdedujob.blogspot.com/search/label/Job%20Solution">Job Solution (প্রশ্ন সমাধান)</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+  <p style="text-align: center;"><span style="font-size: 20px; color: #0b5394;"><strong>{org_bn} ({post_bn}) পরীক্ষার সম্পূর্ণ প্রশ্ন ও উত্তরমালা</strong></span></p>
+  <hr />
+  <p style="text-align: center;"><span style="font-size: 16px; color: #b45309;"><strong>বিঃদ্রঃ কোনো প্রশ্নের উত্তর ভুল মনে হলে কমেন্ট করে জানাবেন, দ্রুত সংশোধন করে দেওয়া হবে।</strong></span></p>
+
+{pages_html}
+
+  <hr />
+  <p style="text-align: justify; margin-top: 18px;">
+    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>&nbsp;
+    <span style="color: #2b00fe;"><i>{org_bn} প্রশ্ন সমাধান ২০২৬, {post_bn} পরীক্ষার প্রশ্ন সমাধান, Job Question Solution 2026, আজকের চাকরির পরীক্ষার প্রশ্ন সমাধান, নিয়োগ পরীক্ষার প্রশ্ন উত্তর, bdedujob.</i></span>
+  </p>
+</div>"""
+
+    labels = ["all", "EXAM INFO", "Job Solution", "QUESTION SOLUTION", "Govt Jobs", "Edcation"]
+    res = publish_to_blogger(
+        title=post_title,
+        html_content=post_html,
+        labels=labels,
+        is_draft=is_draft,
+    )
+    return res, source_url, banner_url
+
+
+def build_and_publish_text_job_solution(item_meta: dict, is_draft: bool = False) -> tuple:
+    source_url = item_meta["url"]
+    org_bn = item_meta["org_bn"]
+    post_bn = item_meta["post_bn"]
+    exam_date = item_meta.get("exam_date", "২০২৬")
+    marks = item_meta.get("marks", "১০০")
+    time_bn = item_meta.get("time", "৬০ মিনিট")
+    org_short = item_meta.get("org_short", "job-solution")
+
+    req = urllib.request.Request(source_url, headers=HEADERS)
+    with urllib.request.urlopen(req, timeout=25) as resp:
+        html = resp.read().decode("utf-8", errors="replace")
+    soup = BeautifulSoup(html, "html.parser")
+    bsc = soup.select_one("div.blog-slide-content")
+    if not bsc:
+        raise ValueError(f"No blog-slide-content found in {source_url}")
+
+    raw_lines = [ln.strip() for ln in bsc.get_text("\n").splitlines() if ln.strip()]
+    if len(raw_lines) < 30:
+        raise ValueError(f"Insufficient question lines ({len(raw_lines)}) in {source_url}")
+
+    q_html_parts = []
+    for ln in raw_lines:
+        ln = re.sub(r"\s+", " ", ln).strip()
+        if not ln or "বিদ্যাবাড়ি" in ln or "বিদ্যাবাড়ি" in ln or "biddabari" in ln.lower() or "other job’s preparation" in ln.lower():
+            continue
+        if re.match(r"^[০-৯0-9]{1,3}[\.।\)]\s*\S+", ln):
+            q_html_parts.append("<hr />")
+            q_html_parts.append(f'<p><span style="font-size: 18px;"><span style="color: green;"><strong>{ln}</strong></span></span></p>')
+        elif re.match(r"^(\(?[কখগঘabcdABCD][\.\)]|\([কখগঘabcdABCD]\))\s*", ln):
+            q_html_parts.append(f'<p><span style="font-size: 18px;">{ln}</span></p>')
+        elif re.match(r"^(উত্তর|সঠিক উত্তর|নোট|Note|Ans|ব্যাখ্যা)", ln, re.I):
+            q_html_parts.append(f'<p><span style="font-size: 18px;"><span style="color: red;"><strong>{ln}</strong></span></span></p>')
+        else:
+            q_html_parts.append(f'<p><span style="font-size: 18px;">{ln}</span></p>')
+
+    os.makedirs(BANNERS_DIR, exist_ok=True)
+    safe_slug = re.sub(r"[^a-z0-9]+", "-", org_short.lower()).strip("-")
+    banner_filename = f"{safe_slug}-question-solution-2026.jpg"
+    local_banner = os.path.join(BANNERS_DIR, banner_filename)
+    exam_line = f"{post_bn} MCQ পরীক্ষার" if len(post_bn) <= 22 else "নিয়োগ MCQ পরীক্ষার"
+    generate_job_solution_banner(org_name_bn=org_bn, exam_line_bn=exam_line, output_path=local_banner)
+    banner_url = upload_local_banner_to_cdn(local_banner, banner_filename)
+
+    post_title = f"{org_bn} এর {post_bn} পদের MCQ পরীক্ষার প্রশ্ন সমাধান – ২০২৬ । {org_short.replace('-', ' ').title()} Question Solution 2026"
+    questions_joined = "\n".join(q_html_parts)
+
+    post_html = f"""<div class="post-body entry-content" style="font-size: 16px; line-height: 1.75; color: #1e293b;">
+  <p style="text-align: center;"><b><span style="font-size: x-large;">{org_bn} এর {post_bn} পদের MCQ পরীক্ষার প্রশ্ন সমাধান – ২০২৬</span></b></p>
+
+  <div style="text-align: justify; margin-bottom: 16px;">
+    সরকারি বেসরকারি সব ধরনের চাকরির খবর, নিয়োগ পরীক্ষার প্রশ্ন সমাধান ও মাসিক কারেন্ট অ্যাফেয়ার্স সবার আগে পেতে ভিজিট করুন <a href="https://bdedujob.blogspot.com">bdedujob.blogspot.com</a> এবং আমাদের <a href="{PLAY_STORE_URL}" rel="nofollow" target="_blank">অফিসিয়াল অ্যাপ</a>। নিচে <b>{org_bn}</b>-এর <b>{post_bn}</b> পদের নিয়োগ পরীক্ষার পূর্ণাঙ্গ MCQ প্রশ্ন ও নির্ভুল সমাধান তুলে ধরা হলো:
+  </div>
+  <!--more-->
+
+  <div class="separator" style="clear: both; text-align: center; margin-bottom: 18px;">
+    <a href="{banner_url}" imageanchor="1" style="margin-left: 1em; margin-right: 1em;">
+      <img alt="{post_title}" title="{post_title}" border="0" data-original-height="445" data-original-width="800" src="{banner_url}" style="max-width: 100%; height: auto; border-radius: 6px;" />
+    </a>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 16px;" border="1" cellpadding="8">
+    <tbody>
+      <tr style="background-color: #0d6b88; color: #ffffff;">
+        <th colspan="2" style="text-align: center; padding: 10px;">পরীক্ষার সংক্ষিপ্ত তথ্য (Exam Overview)</th>
+      </tr>
+      <tr>
+        <td style="width: 38%; font-weight: bold; background-color: #f8fafc;">প্রতিষ্ঠানের নাম</td>
+        <td>{org_bn}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold; background-color: #f8fafc;">পদের নাম</td>
+        <td>{post_bn}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold; background-color: #f8fafc;">পরীক্ষার তারিখ</td>
+        <td>{exam_date}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold; background-color: #f8fafc;">সময় ও পূর্ণমান</td>
+        <td>সময়: {time_bn} | পূর্ণমান: {marks}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold; background-color: #f8fafc;">ক্যাটাগরি</td>
+        <td><a href="https://bdedujob.blogspot.com/search/label/Job%20Solution">Job Solution (প্রশ্ন সমাধান)</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+  <hr />
+  <p style="text-align: center;"><span style="font-size: 20px;"><span style="color: blue;"><strong>{org_bn} ({post_bn}) পরীক্ষার সম্পূর্ণ প্রশ্ন সমাধান ২০২৬</strong></span></span></p>
+  <hr />
+  <hr />
+  <p style="text-align: center;"><span style="font-size: 18px;"><span style="color: violet;"><strong>উত্তর ভুল মনে হলে সঠিক উত্তরটি কমেন্ট বা মেইল করুন, আপডেট করে দেওয়া হবে।</strong></span></span></p>
+
+  {questions_joined}
+
+  <hr />
+  <hr />
+  <p style="text-align: justify; margin-top: 18px;">
+    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>&nbsp;
+    <span style="color: #2b00fe;"><i>{org_bn} প্রশ্ন সমাধান ২০২৬, {post_bn} পরীক্ষার প্রশ্ন সমাধান, Job Solution 2026, চাকরির পরীক্ষার প্রশ্ন সমাধান, bdedujob.</i></span>
+  </p>
+</div>"""
+
+    labels = ["all", "EXAM INFO", "Job Solution", "QUESTION SOLUTION", "Edcation"]
+    if "ব্যাংক" in org_bn or "bank" in org_bn.lower():
+        labels.append("Bank Jobs")
+    else:
+        labels.append("Govt Jobs")
+
+    res = publish_to_blogger(
+        title=post_title,
+        html_content=post_html,
+        labels=labels,
+        is_draft=is_draft,
+    )
+    return res, source_url, banner_url
+
+
+def publish_next_job_question_solution(posted_urls: list) -> bool:
+    """
+    ১) প্রথমে prosnosomadhan.com এর লাইভ ফিড থেকে সদ্য অনুষ্ঠিত পরীক্ষার প্রশ্ন সমাধান (ছবিসহ) চেক করে পাবলিশ করে।
+    ২) নতুন লাইভ পরীক্ষা না থাকলে JOB_SOLUTION_QUEUE থেকে ২০২৬ সালের চাকরির পরীক্ষার MCQ প্রশ্ন সমাধান পাবলিশ করে।
+    """
+    live_titles = " | ".join(get_live_blogger_titles(50)).lower()
+
+    # Step 1: Check live feed from prosnosomadhan.com/category/question-solution/feed/
+    try:
+        items = fetch_rss_items("https://prosnosomadhan.com/category/question-solution/feed/", max_age_days=14)
+        for item in items:
+            link = item["link"]
+            raw_t = item["title"]
+            if not link or link in posted_urls:
+                continue
+            req = urllib.request.Request(link, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                html = resp.read().decode("utf-8", errors="replace")
+            soup = BeautifulSoup(html, "html.parser")
+            series = extract_first_solution_image_series(soup)
+            if not series:
+                # এখনো প্রশ্নের সমাধানের ছবি আপলোড হয়নি, তাই পরবর্তী রানের জন্য অপেক্ষা করবে
+                continue
+            # Check if duplicate image series already posted from a twin URL
+            if series[0] in posted_urls:
+                save_posted_job(link)
+                posted_urls.append(link)
+                continue
+
+            clean_t = re.sub(r"প্রশ্ন সমাধান.*|প্রশ্ন উত্তর.*|পরীক্ষার প্রশ্ন.*|Question Solution.*|Question Answer.*", "", raw_t, flags=re.I).strip(" -–|")
+            org_bn = clean_t or raw_t.split("|")[0].strip()
+            if org_bn.lower() in live_titles:
+                save_posted_job(link)
+                save_posted_job(series[0])
+                posted_urls.extend([link, series[0]])
+                continue
+
+            slug_part = link.rstrip("/").rsplit("/", 1)[-1]
+            res, src, b_url = build_and_publish_image_job_solution(
+                org_bn=org_bn,
+                post_bn="নিয়োগ পরীক্ষা",
+                exam_date_bn="অক্টোবর ২০২৬",
+                marks_bn="১০০",
+                time_bn="৬০/৯০ মিনিট",
+                solution_image_urls=series,
+                source_url=link,
+                slug_prefix=slug_part,
+                is_draft=BLOGGER_IS_DRAFT,
+            )
+            print(f"[JOB SOLUTION LIVE] Published {org_bn} -> {res.get('url')}")
+            ping_google_websub_hub()
+            share_to_facebook_page(
+                title=f"{org_bn} পরীক্ষার প্রশ্ন সমাধান ২০২৬",
+                post_url=res.get("url", ""),
+                banner_url=b_url,
+                summary_text=f"✅ {org_bn} নিয়োগ পরীক্ষার সম্পূর্ণ প্রশ্ন ও নির্ভুল সমাধান দেখুন আমাদের ওয়েবসাইটে।",
+            )
+            save_posted_job(link)
+            save_posted_job(series[0])
+            posted_urls.extend([link, series[0]])
+            return True
+    except Exception as e:
+        print(f"[WARN] Live prosnosomadhan check error: {e}")
+
+    # Step 2: Publish from 2026 JOB_SOLUTION_QUEUE (Biddabari full-text MCQ solutions)
+    for item_meta in JOB_SOLUTION_QUEUE:
+        u = item_meta["url"]
+        if u in posted_urls:
+            continue
+        if item_meta["org_bn"].split("(")[0].strip().lower() in live_titles and item_meta["post_bn"].lower() in live_titles:
+            save_posted_job(u)
+            posted_urls.append(u)
+            continue
+        try:
+            print(f"[JOB SOLUTION QUEUE] Uploading {item_meta['org_bn']} ({item_meta['post_bn']}) -> {u}")
+            res, src, b_url = build_and_publish_text_job_solution(item_meta, is_draft=BLOGGER_IS_DRAFT)
+            print(f"[JOB SOLUTION SUCCESS] Published! URL: {res.get('url')}")
+            ping_google_websub_hub()
+            share_to_facebook_page(
+                title=f"{item_meta['org_bn']} এর {item_meta['post_bn']} পদের পরীক্ষার প্রশ্ন সমাধান ২০২৬",
+                post_url=res.get("url", ""),
+                banner_url=b_url,
+                summary_text=f"📝 {item_meta['org_bn']} ({item_meta['post_bn']}) নিয়োগ পরীক্ষার পূর্ণাঙ্গ MCQ প্রশ্ন ও সমাধান দেখুন।",
+            )
+            save_posted_job(u)
+            posted_urls.append(u)
+            return True
+        except Exception as e:
+            print(f"[WARN] Failed Job Solution upload for {u}: {e}")
+            continue
+    return False
+
+
 def publish_next_bcs_question_solution(posted_urls: list) -> bool:
     live_titles = " | ".join(get_live_blogger_titles(50))
     for bcs_item in BCS_QUESTION_BANK_QUEUE:
@@ -1468,9 +2000,7 @@ def publish_next_bcs_question_solution(posted_urls: list) -> bool:
     return False
 
 
-def main():
-    posted_urls = load_posted_jobs()
-    published_count = 0
+def publish_next_live_job_circular(posted_urls: list) -> bool:
     live_titles_joined = " | ".join(get_live_blogger_titles(45)).lower()
 
     # সব ক্যাটাগরির পোস্ট যেন পালাক্রমে (Round-Robin) সমানভাবে পাবলিশ হয়
@@ -1478,8 +2008,6 @@ def main():
     rotated_sources = JOB_SOURCES[offset:] + JOB_SOURCES[:offset]
 
     for source in rotated_sources:
-        if published_count >= MAX_POSTS_PER_RUN:
-            break
         print(f"[INFO] Checking source: {source['name']} ({source['feed_url']})")
         try:
             items = fetch_rss_items(source["feed_url"])
@@ -1488,8 +2016,6 @@ def main():
             continue
 
         for item in items:
-            if published_count >= MAX_POSTS_PER_RUN:
-                break
             link = item["link"]
             if not link or link in posted_urls:
                 continue
@@ -1563,23 +2089,41 @@ def main():
                     )
                     save_posted_job(link)
                     posted_urls.append(link)
-                    published_count += 1
-                    time.sleep(4)
-                    # একটি ক্যাটাগরি থেকে ১টি পোস্ট করার পর পরবর্তী ক্যাটাগরিতে যাবে
-                    break
+                    return True
                 else:
                     preview_file = os.path.join(BASE_DIR, "sample_post_preview.html")
                     with open(preview_file, "w", encoding="utf-8") as f:
                         f.write(html_post)
                     print(f"[PREVIEW] Saved sample SEO post HTML to: {preview_file}")
-                    published_count += 1
-                    break
+                    return True
             except Exception as e:
                 print(f"[ERROR] Failed processing {link}: {e}")
+    return False
 
-    # সিডিউল অনুযায়ী প্রতি রানে ১টি করে বিসিএস প্রিলি প্রশ্ন সমাধান (২৪তম থেকে ৫০তম পর্যন্ত) অটো আপলোড হবে
-    if BLOGGER_BLOG_ID and BLOGGER_REFRESH_TOKEN:
-        publish_next_bcs_question_solution(posted_urls)
+
+def main():
+    posted_urls = load_posted_jobs()
+    if not (BLOGGER_BLOG_ID and BLOGGER_REFRESH_TOKEN):
+        publish_next_live_job_circular(posted_urls)
+        return
+
+    # প্রতি ৩০ মিনিটের রানে পালাক্রমে (১) নতুন চাকরির বিজ্ঞপ্তি/রেজাল্ট/রুটিন, (২) চাকরির পরীক্ষার প্রশ্ন সমাধান (Job Solution),
+    # এবং (৩) বিসিএস প্রিলি প্রশ্ন সমাধান (BCS) পাবলিশ হবে যাতে Blogger-এর ৫০ পোস্ট/২৪ ঘণ্টার লিমিট কখনোই অতিক্রম না করে।
+    tasks = [
+        ("LIVE_JOB_CIRCULAR", publish_next_live_job_circular),
+        ("JOB_QUESTION_SOLUTION", publish_next_job_question_solution),
+        ("BCS_QUESTION_SOLUTION", publish_next_bcs_question_solution),
+    ]
+    slot = len(posted_urls) % len(tasks)
+    ordered_tasks = tasks[slot:] + tasks[:slot]
+
+    published_count = 0
+    for task_name, task_fn in ordered_tasks:
+        if published_count >= MAX_POSTS_PER_RUN:
+            break
+        print(f"[SCHEDULER] Running slot: {task_name}")
+        if task_fn(posted_urls):
+            published_count += 1
 
 
 if __name__ == "__main__":
