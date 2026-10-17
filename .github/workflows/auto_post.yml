@@ -40,7 +40,12 @@ jobs:
               "https://bdgovtjob.net/rajshahi-university-job-circular/",
               "https://bdgovtjob.net/nstu-job-circular/",
               "https://bdgovtjob.net/meherpur-university-job-circular/",
-              "https://bdgovtjob.net/ad-din-foundation-job-circular/"
+              "https://bdgovtjob.net/ad-din-foundation-job-circular/",
+              "https://bdgovtjob.net/popular-pharmaceuticals-ltd-job-circular/",
+              "https://bdgovtjob.net/drug-international-limited-job-circular/",
+              "https://bdgovtjob.net/bank-asia-limited-job-circular/",
+              "https://bdgovtjob.net/bina-written-exam-result-notice/",
+              "https://bdgovtjob.net/bpsc-written-examination-notice/"
           ]:
               if u not in data:
                   data.append(u)
@@ -54,8 +59,10 @@ jobs:
           BLOGGER_CLIENT_SECRET: ${{ secrets.BLOGGER_CLIENT_SECRET }}
           BLOGGER_REFRESH_TOKEN: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FB_PAGE_ID: "100067891540585"
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           BLOGGER_IS_DRAFT: "false"
-          MAX_POSTS_PER_RUN: "1"
+          MAX_POSTS_PER_RUN: "2"
         run: |
           python3 auto_job_blogger.py
 
