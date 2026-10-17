@@ -55,6 +55,8 @@ ALLOWED_BLOGGER_LABELS = [
     "all",
     "exam result",
     "job",
+    "pdf",
+    "pdf Zone",
 ]
 
 JOB_SOURCES = [
@@ -738,6 +740,21 @@ def create_and_upload_banner(info: dict) -> str:
     except Exception as e:
         print(f"[WARN] FreeImage upload failed: {e}")
 
+    try:
+        import subprocess
+        out = subprocess.check_output(
+            ["curl", "-s", "--max-time", "12", "-F", "content_type=0", "-F", f"img=@{local_path}", "https://api.pixhost.to/images"],
+            timeout=15,
+        ).decode("utf-8", errors="replace")
+        res_json = json.loads(out)
+        th_url = res_json.get("th_url", "")
+        if th_url and "/thumbs/" in th_url:
+            cdn_url = re.sub(r"^https://t(\d+)\.pixhost\.to/thumbs/", r"https://img\1.pixhost.to/images/", th_url)
+            print(f"[BANNER] Uploaded custom banner to Pixhost CDN: {cdn_url}")
+            return cdn_url
+    except Exception as e:
+        print(f"[WARN] Pixhost upload failed: {e}")
+
     gh_repo = os.getenv("GITHUB_REPOSITORY", "")
     gh_branch = os.getenv("GITHUB_REF_NAME", "main")
     if gh_repo:
@@ -1274,6 +1291,10 @@ def main():
                     info.get("job_type_bn", ""),
                     source.get("default_label", ""),
                 )
+                if scraped.get("pdf_links") or "Saptahik Job Paper" in final_labels or "Current Affairs" in final_labels:
+                    for pdf_lbl in ["pdf", "pdf Zone"]:
+                        if pdf_lbl not in final_labels:
+                            final_labels.append(pdf_lbl)
 
                 if BLOGGER_BLOG_ID and BLOGGER_REFRESH_TOKEN:
                     res = publish_to_blogger(
