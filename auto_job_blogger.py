@@ -99,14 +99,19 @@ JOB_SOURCES = [
         "default_label": "Saptahik Job Paper",
     },
     {
-        "name": "eJobs Circular (Bank Jobs)",
-        "feed_url": "https://ejobscircular.com/category/bank-jobs/feed/",
-        "default_label": "Bank Jobs",
+        "name": "BD Govt Job (Defence Jobs)",
+        "feed_url": "https://bdgovtjob.net/category/defence-job-circular/feed/",
+        "default_label": "Govt Jobs",
     },
     {
-        "name": "eJobs Circular (All Jobs)",
-        "feed_url": "https://ejobscircular.com/feed/",
-        "default_label": "Govt Jobs",
+        "name": "BD Govt Job (Group of Company Jobs)",
+        "feed_url": "https://bdgovtjob.net/category/group-of-company-job-circular/feed/",
+        "default_label": "Privet Jobs",
+    },
+    {
+        "name": "BD Govt Job (Pharmaceuticals Jobs)",
+        "feed_url": "https://bdgovtjob.net/category/pharmaceuticals-job-circular/feed/",
+        "default_label": "Privet Jobs",
     },
 ]
 
@@ -180,6 +185,10 @@ BUILTIN_POSTED_URLS = [
     "https://bdgovtjob.net/sme-foundation-job-circular/",
     "https://ejobscircular.com/bangladesh-bank-job-circular/",
     "https://ejobscircular.com/north-west-power-generation-job-circular/",
+    "https://bdgovtjob.net/community-bank-bangladesh-limited-job-circular/",
+    "https://bdgovtjob.net/bangladesh-army-civilian-job-circular/",
+    "https://bdgovtjob.net/square-group-job-circular/",
+    "https://bdgovtjob.net/aci-limited-job-circular/",
 ]
 
 
@@ -205,18 +214,61 @@ def save_posted_job(url: str):
             json.dump(posted, f, ensure_ascii=False, indent=2)
 
 
-def fetch_rss_items(feed_url: str) -> list:
+def fetch_rss_items(feed_url: str, max_age_days: int = 14) -> list:
+    import email.utils
+    from datetime import timezone
+
     req = urllib.request.Request(feed_url, headers=HEADERS)
     with urllib.request.urlopen(req, timeout=15) as resp:
         xml_bytes = resp.read()
     root = ET.fromstring(xml_bytes)
     items = []
+    now_utc = datetime.now(timezone.utc)
     for item in root.findall(".//item"):
         title = (item.findtext("title") or "").strip()
         link = (item.findtext("link") or "").strip()
+        pub_str = (item.findtext("pubDate") or "").strip()
+        if pub_str:
+            try:
+                pub_dt = email.utils.parsedate_to_datetime(pub_str)
+                if pub_dt.tzinfo is None:
+                    pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+                age_days = (now_utc - pub_dt).days
+                if age_days > max_age_days:
+                    continue
+            except Exception:
+                pass
         categories = [c.text.strip() for c in item.findall("category") if c.text]
         items.append({"title": title, "link": link, "categories": categories})
     return items
+
+
+def is_deadline_expired(deadline_bn: str, title_str: str = "") -> bool:
+    """চলমান মাসের আগের কোনো মাসের (যেমন সেপ্টেম্বর বা আগস্ট) মেয়াদোত্তীর্ণ সার্কুলার হলে True রিটার্ন করবে।"""
+    combined = f"{deadline_bn} {title_str}".lower()
+    if any(k in combined for k in ["ফলাফল", "রেজাল্ট", "result", "সময়সূচি", "সময়সূচি", "রুটিন", "routine"]):
+        return False
+
+    bn_months = [
+        ("জানুয়ারি", 1), ("জানুয়ারি", 1), ("january", 1),
+        ("ফেব্রুয়ারি", 2), ("ফেব্রুয়ারি", 2), ("february", 2),
+        ("মার্চ", 3), ("march", 3),
+        ("এপ্রিল", 4), ("april", 4),
+        ("মে", 5), ("may", 5),
+        ("জুন", 6), ("june", 6),
+        ("জুলাই", 7), ("july", 7),
+        ("আগস্ট", 8), ("august", 8),
+        ("সেপ্টেম্বর", 9), ("september", 9),
+        ("অক্টোবর", 10), ("october", 10),
+        ("নভেম্বর", 11), ("november", 11),
+        ("ডিসেম্বর", 12), ("december", 12),
+    ]
+    cur_month = datetime.now().month
+    mentioned_months = [m_num for m_name, m_num in bn_months if m_name in deadline_bn.lower()]
+    if mentioned_months and "২০২৭" not in deadline_bn and "2027" not in deadline_bn:
+        if max(mentioned_months) < cur_month:
+            return True
+    return False
 
 
 def scrape_job_details(article_url: str) -> dict:
@@ -1196,7 +1248,18 @@ def main():
                     save_posted_job(link)
                     posted_urls.append(link)
                     continue
+                kv_dl = scraped["kv_map"].get("আবেদনের শেষ তারিখ") or scraped["kv_map"].get("আবেদনের শেষ সময়ঃ") or ""
+                if kv_dl and is_deadline_expired(kv_dl, item["title"]):
+                    print(f"[SKIP EXPIRED] Circular deadline already passed ({kv_dl}) -> {link}")
+                    save_posted_job(link)
+                    posted_urls.append(link)
+                    continue
                 info = extract_structured_job_info(item["title"], scraped)
+                if is_deadline_expired(info.get("deadline_bn", ""), info.get("post_title", "")):
+                    print(f"[SKIP EXPIRED] Circular deadline already passed ({info.get('deadline_bn')}) -> {link}")
+                    save_posted_job(link)
+                    posted_urls.append(link)
+                    continue
                 banner_url = create_and_upload_banner(info)
                 html_post = build_bdedujob_post_html(
                     info,
