@@ -38,7 +38,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 IMGBB_API_KEY = os.getenv("IMGBB_API_KEY", "")
 FB_PAGE_ID = os.getenv("FB_PAGE_ID", "100067891540585")
 FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
-MAX_POSTS_PER_RUN = int(os.getenv("MAX_POSTS_PER_RUN", "1"))
+MAX_POSTS_PER_RUN = 1
 
 SITE_URL = "https://bdedujob.blogspot.com"
 SITE_DISPLAY = "www.bdedujob.blogspot.com"
@@ -449,6 +449,8 @@ BUILTIN_POSTED_URLS = [
     "https://eduresultbd.com/nu-degree-exam-routine/",
     "https://examresultbd.com/preliminary-to-masters-result/",
     "https://eduresultbd.com/brac-medhabikash-scholarship/",
+    "https://bdgovtjob.net/gazipur-agricultural-university-job-circular/",
+    "https://eduresultbd.com/baf-shaheen-college-admission/",
 ]
 
 
@@ -474,9 +476,61 @@ def save_posted_job(url: str):
             json.dump(posted, f, ensure_ascii=False, indent=2)
 
 
+def parse_bn_date_to_iso(date_str: str) -> str:
+    """বাংলা বা ইংরেজি তারিখ (যেমন '১৫ অক্টোবর ২০২৬' বা '১৭ জানুয়ারি ২০২৬') থেকে RFC 3339 ISO টাইমস্ট্যাম্প তৈরি করে।"""
+    if not date_str:
+        return ""
+    bn_digits = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
+    s = date_str.translate(bn_digits).lower()
+    month_map = [
+        ("জানুয়ারি", 1), ("জানুয়ারি", 1), ("january", 1),
+        ("ফেব্রুয়ারি", 2), ("ফেব্রুয়ারি", 2), ("february", 2),
+        ("মার্চ", 3), ("march", 3),
+        ("এপ্রিল", 4), ("april", 4),
+        ("মে", 5), ("may", 5),
+        ("জুন", 6), ("june", 6),
+        ("জুলাই", 7), ("july", 7),
+        ("আগস্ট", 8), ("august", 8),
+        ("সেপ্টেম্বর", 9), ("september", 9),
+        ("অক্টোবর", 10), ("october", 10),
+        ("নভেম্বর", 11), ("november", 11),
+        ("ডিসেম্বর", 12), ("december", 12),
+    ]
+    found_month = None
+    for m_name, m_num in month_map:
+        if m_name in s:
+            found_month = m_num
+            break
+    if not found_month:
+        return ""
+    day_m = re.search(r"\b([0-3]?\d)\b", s)
+    year_m = re.search(r"\b(202\d)\b", s)
+    day = int(day_m.group(1)) if day_m and 1 <= int(day_m.group(1)) <= 31 else 15
+    year = int(year_m.group(1)) if year_m else 2026
+    now_bd = datetime.now()
+    return f"{year:04d}-{found_month:02d}-{day:02d}T{now_bd.hour:02d}:{now_bd.minute:02d}:00+06:00"
+
+
+def format_iso_to_bn_date(iso_str: str) -> str:
+    """ISO টাইমস্ট্যাম্প (যেমন '2026-10-16T13:21:00+00:00') থেকে বাংলা তারিখ ('১৬ অক্টোবর ২০২৬') তৈরি করে।"""
+    if not iso_str or len(iso_str) < 10:
+        return ""
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", iso_str.strip())
+    if not m:
+        return ""
+    yr, mo, dy = m.group(1), int(m.group(2)), int(m.group(3))
+    bn_months = {
+        1: "জানুয়ারি", 2: "ফেব্রুয়ারি", 3: "মার্চ", 4: "এপ্রিল",
+        5: "মে", 6: "জুন", 7: "জুলাই", 8: "আগস্ট",
+        9: "সেপ্টেম্বর", 10: "অক্টোবর", 11: "নভেম্বর", 12: "ডিসেম্বর",
+    }
+    en_to_bn = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
+    return f"{dy:02d} {bn_months.get(mo, 'অক্টোবর')} {yr}".translate(en_to_bn)
+
+
 def fetch_rss_items(feed_url: str, max_age_days: int = 14) -> list:
     import email.utils
-    from datetime import timezone
+    from datetime import timezone, timedelta
 
     req = urllib.request.Request(feed_url, headers=HEADERS)
     with urllib.request.urlopen(req, timeout=15) as resp:
@@ -484,10 +538,12 @@ def fetch_rss_items(feed_url: str, max_age_days: int = 14) -> list:
     root = ET.fromstring(xml_bytes)
     items = []
     now_utc = datetime.now(timezone.utc)
+    bd_tz = timezone(timedelta(hours=6))
     for item in root.findall(".//item"):
         title = (item.findtext("title") or "").strip()
         link = (item.findtext("link") or "").strip()
         pub_str = (item.findtext("pubDate") or "").strip()
+        pub_iso = ""
         if pub_str:
             try:
                 pub_dt = email.utils.parsedate_to_datetime(pub_str)
@@ -496,10 +552,11 @@ def fetch_rss_items(feed_url: str, max_age_days: int = 14) -> list:
                 age_days = (now_utc - pub_dt).days
                 if age_days > max_age_days:
                     continue
+                pub_iso = pub_dt.astimezone(bd_tz).isoformat()
             except Exception:
                 pass
         categories = [c.text.strip() for c in item.findall("category") if c.text]
-        items.append({"title": title, "link": link, "categories": categories})
+        items.append({"title": title, "link": link, "categories": categories, "pub_iso": pub_iso})
     return items
 
 
@@ -723,6 +780,18 @@ def scrape_job_details(article_url: str) -> dict:
                     "salary": sal,
                 })
 
+    published_iso = ""
+    for m_el in [
+        soup.find("meta", {"property": "article:modified_time"}),
+        soup.find("meta", {"property": "article:published_time"}),
+        soup.find("time"),
+    ]:
+        if m_el:
+            cand = (m_el.get("content") or m_el.get("datetime") or "").strip()
+            if cand and "202" in cand:
+                published_iso = cand
+                break
+
     return {
         "raw_text": raw_text[:9500],
         "notice_images": notice_images[:6],
@@ -734,6 +803,7 @@ def scrape_job_details(article_url: str) -> dict:
         "kv_map": kv_map,
         "apply_steps": apply_steps[:6],
         "parsed_posts": parsed_posts[:8],
+        "published_iso": published_iso,
     }
 
 
@@ -1543,16 +1613,19 @@ def share_to_facebook_page(
             print(f"[WARN] Facebook Page auto-share ({target}) failed: {e}")
 
 
-def publish_to_blogger(title: str, html_content: str, labels: list, is_draft: bool = False) -> dict:
+def publish_to_blogger(title: str, html_content: str, labels: list, is_draft: bool = False, published_iso: str = "") -> dict:
     access_token = get_blogger_access_token()
     api_url = f"https://www.googleapis.com/blogger/v3/blogs/{BLOGGER_BLOG_ID}/posts/?isDraft={'true' if is_draft else 'false'}"
-    body = json.dumps({
+    payload = {
         "kind": "blogger#post",
         "blog": {"id": BLOGGER_BLOG_ID},
         "title": title,
         "content": html_content,
         "labels": labels,
-    }).encode("utf-8")
+    }
+    if published_iso:
+        payload["published"] = published_iso
+    body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         api_url,
         data=body,
@@ -1681,11 +1754,25 @@ def build_and_publish_bcs_item(bcs_item: dict, is_draft: bool = False) -> dict:
 </div>"""
 
     labels = ["all", "BCS", "BCS Exam Question Solution", "QUESTION SOLUTION", "Edcation"]
+    # বিগত বিসিএস প্রশ্ন সমাধানগুলোকে ক্রমানুসারে সঠিক ঐতিহাসিক তারিখে পাবলিশ করা যাতে হোমপেজের সর্বশেষ আপডেটগুলো এলোমেলো না হয়
+    bcs_num_m = re.search(r"(\d+)", num_en)
+    bcs_n = int(bcs_num_m.group(1)) if bcs_num_m else 39
+    if bcs_n >= 50:
+        bcs_pub_iso = "2026-01-30T16:00:00+06:00"
+    elif "special" in num_en.lower():
+        bcs_pub_iso = "2022-06-23T01:55:00-07:00"
+    else:
+        total_mins = 170 + max(0, bcs_n - 24) * 10
+        hh = 2 + (total_mins // 60)
+        mm = total_mins % 60
+        bcs_pub_iso = f"2022-06-23T{hh:02d}:{mm:02d}:00-07:00"
+
     res = publish_to_blogger(
         title=post_title,
         html_content=post_html,
         labels=labels,
         is_draft=is_draft,
+        published_iso=bcs_pub_iso,
     )
     return res, source_url
 
@@ -1773,6 +1860,7 @@ def build_and_publish_image_job_solution(
     source_url: str,
     slug_prefix: str = "job-solution-2026",
     is_draft: bool = False,
+    published_iso: str = "",
 ) -> tuple:
     os.makedirs(BANNERS_DIR, exist_ok=True)
     safe_slug = re.sub(r"[^a-z0-9]+", "-", slug_prefix.lower()).strip("-") or "job-solution-2026"
@@ -1855,11 +1943,13 @@ def build_and_publish_image_job_solution(
 </div>"""
 
     labels = ["all", "EXAM INFO", "Job Solution", "QUESTION SOLUTION", "Govt Jobs", "Edcation"]
+    eff_pub_iso = published_iso or parse_bn_date_to_iso(exam_date_bn)
     res = publish_to_blogger(
         title=post_title,
         html_content=post_html,
         labels=labels,
         is_draft=is_draft,
+        published_iso=eff_pub_iso,
     )
     return res, source_url, banner_url
 
@@ -1976,11 +2066,13 @@ def build_and_publish_text_job_solution(item_meta: dict, is_draft: bool = False)
     else:
         labels.append("Govt Jobs")
 
+    exam_pub_iso = parse_bn_date_to_iso(exam_date)
     res = publish_to_blogger(
         title=post_title,
         html_content=post_html,
         labels=labels,
         is_draft=is_draft,
+        published_iso=exam_pub_iso,
     )
     return res, source_url, banner_url
 
@@ -2022,17 +2114,27 @@ def publish_next_job_question_solution(posted_urls: list) -> bool:
                 posted_urls.extend([link, series[0]])
                 continue
 
+            pub_iso = item.get("pub_iso", "")
+            for m_el in [soup.find("meta", {"property": "article:published_time"}), soup.find("time")]:
+                if m_el:
+                    cand = (m_el.get("content") or m_el.get("datetime") or "").strip()
+                    if cand and "202" in cand:
+                        pub_iso = cand
+                        break
+            exam_dt_bn = format_iso_to_bn_date(pub_iso) or "অক্টোবর ২০২৬"
+
             slug_part = link.rstrip("/").rsplit("/", 1)[-1]
             res, src, b_url = build_and_publish_image_job_solution(
                 org_bn=org_bn,
                 post_bn="নিয়োগ পরীক্ষা",
-                exam_date_bn="অক্টোবর ২০২৬",
+                exam_date_bn=exam_dt_bn,
                 marks_bn="১০০",
                 time_bn="৬০/৯০ মিনিট",
                 solution_image_urls=series,
                 source_url=link,
                 slug_prefix=slug_part,
                 is_draft=BLOGGER_IS_DRAFT,
+                published_iso=pub_iso,
             )
             print(f"[JOB SOLUTION LIVE] Published {org_bn} -> {res.get('url')}")
             save_posted_job(link)
@@ -2197,11 +2299,17 @@ def publish_next_live_job_circular(posted_urls: list) -> bool:
                             final_labels.append(pdf_lbl)
 
                 if BLOGGER_BLOG_ID and BLOGGER_REFRESH_TOKEN:
+                    job_pub_iso = (
+                        scraped.get("published_iso")
+                        or item.get("pub_iso")
+                        or parse_bn_date_to_iso(info.get("start_date_bn", ""))
+                    )
                     res = publish_to_blogger(
                         title=info["post_title"],
                         html_content=html_post,
                         labels=final_labels,
                         is_draft=BLOGGER_IS_DRAFT,
+                        published_iso=job_pub_iso,
                     )
                     print(f"[SUCCESS] Published to Blogger! Post URL: {res.get('url')}")
                     save_posted_job(link)
@@ -2246,6 +2354,7 @@ def build_and_publish_education_notice(
     slug_prefix: str = "education-notice-2026",
     extra_labels: list = None,
     is_draft: bool = False,
+    published_iso: str = "",
 ) -> tuple:
     os.makedirs(BANNERS_DIR, exist_ok=True)
     safe_slug = re.sub(r"[^a-z0-9]+", "-", slug_prefix.lower()).strip("-") or "education-notice-2026"
@@ -2273,7 +2382,8 @@ def build_and_publish_education_notice(
             uploaded_imgs.append(im_u)
 
     en_clean = slug_prefix.replace("-", " ").title()
-    if program_bn and program_bn not in org_bn and not re.search(r"[A-Za-z]{4,}", program_bn):
+    generic_programs = {"অফিশিয়াল শিক্ষা ও পরীক্ষা বিজ্ঞপ্তি", "শিক্ষা ও পরীক্ষা সংক্রান্ত বিজ্ঞপ্তি"}
+    if program_bn and program_bn not in generic_programs and program_bn not in org_bn and not re.search(r"[A-Za-z]{4,}", program_bn):
         post_title = f"{org_bn} {program_bn} {notice_type_bn} ২০২৬ । {en_clean} 2026"
     else:
         post_title = f"{org_bn} {notice_type_bn} ২০২৬ । {en_clean} 2026"
@@ -2374,11 +2484,13 @@ def build_and_publish_education_notice(
             if pl not in labels:
                 labels.append(pl)
 
+    eff_pub_iso = published_iso or parse_bn_date_to_iso(publish_date_bn)
     res = publish_to_blogger(
         title=post_title,
         html_content=post_html,
         labels=labels,
         is_draft=is_draft,
+        published_iso=eff_pub_iso,
     )
     return res, source_url, banner_url
 
@@ -2427,24 +2539,26 @@ def publish_next_education_notice(posted_urls: list) -> bool:
                 org_en = info.get("org_name_en") or "BD Education Notice"
                 t_low = raw_title.lower()
                 extra_lbls = []
+                is_nu = False
                 if "national university" in t_low or "nu " in t_low or "জাতীয় বিশ্ববিদ্যালয়" in t_low or "জাতীয় বিশ্ববিদ্যালয়" in t_low:
                     org_bn = "জাতীয় বিশ্ববিদ্যালয় (NU)"
                     org_en = "National University (NU)"
                     extra_lbls.extend(["nu", "Honour's"])
+                    is_nu = True
                 if "hsc" in t_low or "এইচএসসি" in t_low or "xi class" in t_low:
                     extra_lbls.append("Hsc")
                 if "ssc" in t_low or "এসএসসি" in t_low:
                     extra_lbls.append("SSC")
 
                 notice_type_bn = src_cfg["edu_type"]
-                if "routine" in t_low or "রুটিন" in t_low or "সময়সূচি" in t_low:
-                    notice_type_bn = "পরীক্ষার সময়সূচি ও রুটিন"
-                elif "result" in t_low or "ফলাফল" in t_low or "রেজাল্ট" in t_low:
-                    notice_type_bn = "পরীক্ষার ফলাফল"
-                elif "scholarship" in t_low or "বৃত্তি" in t_low or "উপবৃত্তি" in t_low:
+                if "scholarship" in t_low or "বৃত্তি" in t_low or "উপবৃত্তি" in t_low:
                     notice_type_bn = "শিক্ষাবৃত্তি বিজ্ঞপ্তি"
                 elif "admission" in t_low or "ভর্তি" in t_low:
                     notice_type_bn = "ভর্তি বিজ্ঞপ্তি"
+                elif "routine" in t_low or "রুটিন" in t_low or "সময়সূচি" in t_low:
+                    notice_type_bn = "পরীক্ষার সময়সূচি ও রুটিন"
+                elif "result" in t_low or "ফলাফল" in t_low or "রেজাল্ট" in t_low:
+                    notice_type_bn = "পরীক্ষার ফলাফল"
 
                 slug_part = link.rstrip("/").rsplit("/", 1)[-1]
                 if slug_part.replace("-", " ").lower() in live_titles_joined:
@@ -2466,20 +2580,25 @@ def publish_next_education_notice(posted_urls: list) -> bool:
                 elif "ssc" in t_low:
                     program_bn = "এসএসসি (SSC) পর্যায়"
 
+                edu_pub_iso = sc.get("published_iso") or item.get("pub_iso") or parse_bn_date_to_iso(info.get("start_date_bn", ""))
+                pub_dt_bn = format_iso_to_bn_date(edu_pub_iso) or info.get("start_date_bn") or "অক্টোবর ২০২৬"
+                off_site = sc.get("official_site") or info.get("official_website") or ("www.nu.ac.bd" if is_nu else "www.shed.gov.bd")
+
                 res, src, b_url = build_and_publish_education_notice(
                     org_bn=org_bn,
                     org_en=org_en,
                     notice_type_bn=notice_type_bn,
                     program_bn=program_bn,
-                    publish_date_bn=info.get("start_date_bn") or "অক্টোবর ২০২৬",
+                    publish_date_bn=pub_dt_bn,
                     exam_or_deadline_bn=dl_str or "অফিশিয়াল নোটিশ দেখুন",
-                    official_site=info.get("official_website") or "www.nu.ac.bd",
+                    official_site=off_site,
                     notice_images=imgs_2026 if imgs_2026 else sc.get("notice_images", [])[:1],
                     pdf_links=pdfs_2026,
                     source_url=link,
                     slug_prefix=slug_part,
                     extra_labels=extra_lbls,
                     is_draft=BLOGGER_IS_DRAFT,
+                    published_iso=edu_pub_iso,
                 )
                 print(f"[EDUCATION SUCCESS] Published {raw_title} -> {res.get('url')}")
                 save_posted_job(link)
