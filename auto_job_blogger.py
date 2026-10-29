@@ -1460,11 +1460,6 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     <b>প্রশ্ন ২: পরবর্তী পরীক্ষা বা ভাইভা কবে অনুষ্ঠিত হবে?</b><br/>
     উত্তর: প্রকাশিত নোটিশ অনুযায়ী নির্ধারিত তারিখ ও সময়: <b>{info['deadline_bn']}</b>।
   </p>
-
-  <p style="text-align: justify; margin-top: 18px; font-size: 14px; color: #475569;">
-    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>
-    <i>{title_full}, {org_bn} {notice_label_bn} ২০২৬, {org_en} Result Routine 2026, exam result 2026, exam routine 2026, bdedujob.</i>
-  </p>
 </div>"""
         return html
 
@@ -1937,10 +1932,6 @@ def build_and_publish_bcs_item(bcs_item: dict, is_draft: bool = False) -> dict:
 
   <hr />
   <hr />
-  <p style="text-align: justify; margin-top: 18px;">
-    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>&nbsp;
-    <span style="color: #2b00fe;"><i>{num_bn} তম বি সি এস প্রিলি পরীক্ষার প্রশ্নের সমাধান, {num_en} BCS Prelim Exam Question Solution, {num_bn}তম বিসিএস প্রশ্ন সমাধান, {num_en} BCS Preliminary Question and Answer PDF, bcs preliminary mcq question solution, bcs previous question solution, bdedujob.</i></span>
-  </p>
 </div>"""
 
     labels = ["all", "BCS", "BCS Exam Question Solution", "QUESTION SOLUTION", "Edcation"]
@@ -2133,10 +2124,6 @@ def build_and_publish_image_job_solution(
 {pages_html}
 
   <hr />
-  <p style="text-align: justify; margin-top: 18px;">
-    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>&nbsp;
-    <span style="color: #2b00fe;"><i>{org_bn} প্রশ্ন সমাধান ২০২৬, {post_bn} পরীক্ষার প্রশ্ন সমাধান, Job Question Solution 2026, আজকের চাকরির পরীক্ষার প্রশ্ন সমাধান, নিয়োগ পরীক্ষার প্রশ্ন উত্তর, bdedujob.</i></span>
-  </p>
 </div>"""
 
     labels = ["all", "EXAM INFO", "Job Solution", "QUESTION SOLUTION", "Govt Jobs", "Edcation"]
@@ -2254,10 +2241,6 @@ def build_and_publish_text_job_solution(item_meta: dict, is_draft: bool = False)
 
   <hr />
   <hr />
-  <p style="text-align: justify; margin-top: 18px;">
-    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>&nbsp;
-    <span style="color: #2b00fe;"><i>{org_bn} প্রশ্ন সমাধান ২০২৬, {post_bn} পরীক্ষার প্রশ্ন সমাধান, Job Solution 2026, চাকরির পরীক্ষার প্রশ্ন সমাধান, bdedujob.</i></span>
-  </p>
 </div>"""
 
     labels = ["all", "EXAM INFO", "Job Solution", "QUESTION SOLUTION", "Edcation"]
@@ -2676,11 +2659,6 @@ def build_and_publish_education_notice(
       📥 অফিশিয়াল নোটিশ ও বিস্তারিত দেখুন (Official Website / PDF)
     </a>
   </div>
-
-  <p style="text-align: justify; margin-top: 18px; font-size: 14px; color: #475569;">
-    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>
-    <i>{org_bn} {notice_type_bn} ২০২৬, {program_bn}, {org_en} Notice 2026, BD Education Info, Admission Circular 2026, Exam Routine 2026, Exam Result 2026, bdedujob.</i>
-  </p>
 </div>"""
 
     labels = ["all", "Edcation", "EXAM INFO"]
@@ -3124,11 +3102,6 @@ def publish_friday_saptahik_job_papers(posted_urls: list) -> bool:
       📥 সম্পূর্ণ পত্রিকার PDF ডাউনলোড করুন ({paper_bn} {dd_mm_bn})
     </a>
   </div>
-
-  <p style="text-align: justify; margin-top: 18px; font-size: 14px; color: #475569;">
-    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>
-    <i>{post_title}, {paper_bn} {dd_mm_bn}, {paper_en} {full_en} PDF Download, saptahik chakrir potrika, Weekly job newspaper, bdedujob.</i>
-  </p>
   <style>.fb-rss-seo-summary{{display:none!important;}}</style>
 </div>"""
 
