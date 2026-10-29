@@ -1191,34 +1191,12 @@ def create_and_upload_banner(info: dict) -> str:
 
 def make_fb_rss_seo_div(core_lines: list, tags: list) -> str:
     """
-    Blogger RSS <summary> ও <description> ফিডে (যা থেকে dlvr.it / ফেসবুক পেজে অটো-পোস্ট হয়)
-    স্ট্রাকচার্ড ইমোজি ও SEO হ্যাশট্যাগ পাঠায়, এবং পোস্টের নিচে থাকা <style> দিয়ে ওয়েবসাইটে অদৃশ্য থাকে।
-    (ইনলাইন display:none না থাকায় dlvr.it এটি স্কিপ করে না।)
+    [বন্ধ করা হয়েছে] আগে dlvr.it RSS ফিডের জন্য পোস্টের বডিতে লুকানো SEO text রাখা হতো।
+    এখন Facebook-এ সরাসরি API দিয়ে পোস্ট হয়, তাই বডিতে লুকানো text রাখা হয় না —
+    এটি AdSense ও Google-এর hidden-text নীতির জন্য ঝুঁকিপূর্ণ। ফাংশনটি রাখা হলো যাতে
+    পুরোনো কল-সাইটগুলো ভেঙে না যায়; সবসময় খালি স্ট্রিং ফেরত দেয়।
     """
-    cleaned_lines = []
-    for idx, line in enumerate(core_lines):
-        if not line or not line.strip():
-            continue
-        s = line.strip()
-        if idx > 0 and not s.startswith("👉") and len(s) > 54:
-            s = s[:52].rstrip(" ,|-") + "..."
-        cleaned_lines.append(s)
-    body_plain = "\n".join(cleaned_lines).strip()
-    tag_str = ""
-    for t in tags:
-        cand = (body_plain + "\n" + (tag_str + " " + t).strip()).strip()
-        if len(cand) <= 345:
-            tag_str = (tag_str + " " + t).strip()
-        else:
-            break
-    full_plain = (body_plain + "\n" + tag_str).strip() if tag_str else body_plain
-    pad_len = max(0, 365 - len(full_plain))
-    html_lines = "<br />\n".join(cleaned_lines)
-    if tag_str:
-        html_lines = f"{html_lines}<br />\n{tag_str}"
-    if pad_len > 0:
-        html_lines = html_lines + (" " + "\u200b" * pad_len)
-    return f'<p class="fb-rss-seo-summary">{html_lines}</p>'
+    return ""
 
 
 def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, pdf_links: list = None) -> str:
@@ -1596,6 +1574,17 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     <b>{org_bn}</b>-এ আবেদনপত্র গ্রহণের পর প্রাথমিক বাছাই (Shortlisting) করা হবে। যোগ্য বিবেচিত প্রার্থীদের মোবাইল SMS অথবা ই-মেইলের মাধ্যমে লিখিত পরীক্ষা বা মৌখিক পরীক্ষার (Interview) তারিখ, সময় ও স্থান জানানো হবে। এছাড়াও নিয়মিত আপডেট আমাদের জব পোর্টাল <a href="{SITE_URL}">{SITE_DISPLAY}</a>-এ প্রকাশ করা হবে।
   </p>
 
+  <h2 style="text-align: center; color: #38761d; font-size: 21px; margin-top: 28px;">
+    আবেদনের আগে করণীয় (আবেদনকারীদের জন্য চেকলিস্ট)
+  </h2>
+  <ul style="line-height: 1.9; text-align: justify;">
+    <li>মূল বিজ্ঞপ্তিতে উল্লেখিত যোগ্যতা, বয়সসীমা ও কোটা-সংক্রান্ত শর্ত আপনার ক্ষেত্রে প্রযোজ্য কি না যাচাই করুন।</li>
+    <li>সদ্য তোলা রঙিন ছবি, স্বাক্ষর, জাতীয় পরিচয়পত্র ও শিক্ষাগত সনদের স্ক্যান কপি নির্ধারিত সাইজে আগে থেকে প্রস্তুত রাখুন।</li>
+    <li>আবেদন ফি জমা দেওয়ার মাধ্যম (মোবাইল ব্যাংকিং/টেলিটক/ব্যাংক চালান) আগে থেকে নিশ্চিত হয়ে রাখুন।</li>
+    <li>শেষ তারিখের জন্য অপেক্ষা না করে হাতে সময় রেখে আবেদন করুন; আবেদনের প্রিন্ট কপি বা স্ক্রিনশট সংরক্ষণ করুন।</li>
+    <li>মনে রাখবেন: বিজ্ঞপ্তিতে দেওয়া নির্দেশনাই চূড়ান্ত — কোনো অসঙ্গতি দেখলে অফিসিয়াল বিজ্ঞপ্তিটিকেই প্রাধান্য দিন।</li>
+  </ul>
+
   <!-- ১০. সচরাচর জিজ্ঞাসিত প্রশ্নোত্তর (FAQ) -->
   <h2 style="text-align: center; color: #38761d; font-size: 21px; margin-top: 28px;">
     সচরাচর জিজ্ঞাসিত প্রশ্নোত্তর (FAQ)
@@ -1621,9 +1610,9 @@ def build_bdedujob_post_html(info: dict, banner_url: str, notice_images: list, p
     </p>
   </div>
 
-  <p style="text-align: justify; margin-top: 18px; font-size: 14px; color: #475569;">
-    <b><span style="color: #38761d;"><u>Post Related Tag:</u></span></b>
-    <i>{org_bn} নিয়োগ বিজ্ঞপ্তি ২০২৬, {org_bn} নতুন চাকরি, {org_en} Job Circular 2026, {short_code} Job Circular 2026, bd job circular 2026 today, নতুন নিয়োগ বিজ্ঞপ্তি ২০২৬, bdedujob.</i>
+  <p style="text-align: justify; margin-top: 18px; font-size: 14.5px; color: #475569;">
+    তথ্যসূত্র: {org_bn}-এর প্রকাশিত অফিসিয়াল নিয়োগ বিজ্ঞপ্তি। আবেদনের আগে মূল বিজ্ঞপ্তিটি ভালোভাবে পড়ে নিন এবং
+    <a href="{SITE_URL}" style="color: #38761d; font-weight: bold;">{SITE_DISPLAY}</a>-এ নিয়মিত চোখ রাখুন — নতুন চাকরি, পরীক্ষার রুটিন ও ফলাফলের আপডেট আমরা দ্রুত প্রকাশ করে থাকি।
   </p>
   {schema_script}
 </div>"""
