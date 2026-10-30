@@ -41,7 +41,7 @@ if FB_PAGE_ID == "100067891540585":
     # পুরোনো ভুল Page ID — workflow-এ থেকে গেলেও সঠিক পেজই ব্যবহার হবে
     FB_PAGE_ID = "104790438452242"
 FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
-MAX_POSTS_PER_RUN = 1
+MAX_POSTS_PER_RUN = 2
 
 SITE_URL = "https://bdedujob.blogspot.com"
 SITE_DISPLAY = "www.bdedujob.blogspot.com"
@@ -3147,21 +3147,23 @@ def main():
 
     # সবার আগে শুক্রবারের সাপ্তাহিক চাকরির পত্রিকা (FRIDAY_SAPTAHIK_PAPER), এরপর নতুন প্রকাশিত চাকরির বিজ্ঞপ্তি (LIVE_JOB_CIRCULAR)
     # এবং শিক্ষা ও ভর্তি নোটিশ (EDUCATION_NOTICE) চেক করবে, যাতে আজকের কোনো নতুন সার্কুলার বা সাপ্তাহিক পত্রিকা কখনোই পেছনে পড়ে না থাকে।
+    # অগ্রাধিকার (সবার আগে সময়-সংবেদনশীল আপডেট): আজকের পরীক্ষার প্রশ্ন সমাধান এবং
+    # শিক্ষা নোটিশ/রুটিন/ফলাফল (SSC, HSC, NU, Degree, JSC) — এরপর চাকরির বিজ্ঞপ্তি, সবার শেষে BCS আর্কাইভ
     live_tasks = [
-        ("LIVE_JOB_CIRCULAR", publish_next_live_job_circular),
+        ("JOB_QUESTION_SOLUTION", publish_next_job_question_solution),
         ("EDUCATION_NOTICE", publish_next_education_notice),
     ]
     if len(posted_urls) % 2 == 1:
         live_tasks.reverse()
 
-    archive_tasks = [
-        ("JOB_QUESTION_SOLUTION", publish_next_job_question_solution),
-        ("BCS_QUESTION_SOLUTION", publish_next_bcs_question_solution),
-    ]
-    if (len(posted_urls) // 2) % 2 == 1:
-        archive_tasks.reverse()
-
-    ordered_tasks = [("FRIDAY_SAPTAHIK_PAPER", publish_friday_saptahik_job_papers)] + live_tasks + archive_tasks
+    ordered_tasks = (
+        [("FRIDAY_SAPTAHIK_PAPER", publish_friday_saptahik_job_papers)]
+        + live_tasks
+        + [
+            ("LIVE_JOB_CIRCULAR", publish_next_live_job_circular),
+            ("BCS_QUESTION_SOLUTION", publish_next_bcs_question_solution),
+        ]
+    )
 
     published_count = 0
     for task_name, task_fn in ordered_tasks:
