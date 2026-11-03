@@ -1,11 +1,8 @@
 name: Auto Publish BD Job Circulars to Blogger
 
 on:
-  push:
-    paths:
-      - '.github/workflows/auto_post.yml'
-      - 'auto_job_blogger.py'
-      - 'banner_generator.py'
+  # Queue publication stays on the half-hour schedule; no push trigger, so a
+  # multi-file upload cannot cause several posts to fire in quick succession.
   schedule:
     - cron: '12,42 * * * *'
   workflow_dispatch:
@@ -52,23 +49,36 @@ jobs:
           json.dump(data, open(f, "w"), indent=2)
           '
 
+      - name: Publish one verified queued post
+        id: verified_queue
+        env:
+          BLOGGER_BLOG_ID: "3244474783562745180"
+          BLOGGER_CLIENT_ID: ${{ secrets.BLOGGER_CLIENT_ID }}
+          BLOGGER_CLIENT_SECRET: ${{ secrets.BLOGGER_CLIENT_SECRET }}
+          BLOGGER_REFRESH_TOKEN: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
+          BLOGGER_IS_DRAFT: "false"
+          FB_PAGE_ID: "104790438452242"
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+        run: python3 publish_verified_post_queue.py
+
       - name: Run Auto Job Circular Scraper & Blogger Publisher
+        if: steps.verified_queue.outputs.slot_consumed != 'true'
         env:
           BLOGGER_BLOG_ID: "3244474783562745180"
           BLOGGER_CLIENT_ID: ${{ secrets.BLOGGER_CLIENT_ID }}
           BLOGGER_CLIENT_SECRET: ${{ secrets.BLOGGER_CLIENT_SECRET }}
           BLOGGER_REFRESH_TOKEN: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          FB_PAGE_ID: "100067891540585"
+          FB_PAGE_ID: "104790438452242"
           FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           BLOGGER_IS_DRAFT: "false"
-          MAX_POSTS_PER_RUN: "2"
+          MAX_POSTS_PER_RUN: "1"
         run: |
-          python3 auto_job_blogger.py
+          python3 -c 'import auto_job_blogger as bot; bot.MAX_POSTS_PER_RUN = 1; bot.main()'
 
       - name: Save Posted Jobs & Generated Banners
         run: |
           git config user.name "bdedujob-bot"
           git config user.email "bot@bdedujob.blogspot.com"
-          git add posted_jobs.json generated_banners/ 2>/dev/null || true
-          git diff --staged --quiet || (git commit -m "chore: update posted jobs and banners [skip ci]" && git push)
+          git add posted_jobs.json latest_facebook_posts.txt verified_post_state.json generated_banners/ 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "chore: update posted jobs and verified queue state [skip ci]" && git push)
