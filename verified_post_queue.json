@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "description": "2026-11-03 যাচাইকৃত ও সময়সীমা-সক্রিয় Blogger পোস্ট; ক্রমে একটি করে প্রকাশ হবে",
+  "items": [
+    {
+      "id": "hsc_rescrutiny_2026",
+      "title": "এইচএসসি ২০২৬ খাতা পুনঃনিরীক্ষণের আবেদন ১–৭ নভেম্বর",
+      "html_file": "verified_posts/HSC_Rescrutiny_2026.html",
+      "labels": ["Hsc", "Edcation", "EXAM INFO", "pdf", "pdf Zone"],
+      "banner_url": "https://iili.io/n68aDUF.png",
+      "expires_on": "2026-11-07",
+      "facebook_summary": "🗓️ আবেদন: ১–৭ নভেম্বর ২০২৬\n🏫 সকল শিক্ষা বোর্ডের সরকারি পোর্টাল\nℹ️ ফি ও ধাপ পোর্টালের নির্দেশনা অনুযায়ী নিশ্চিত করুন"
+    },
+    {
+      "id": "cag_jobs_2026",
+      "title": "মহা হিসাব নিরীক্ষক ও নিয়ন্ত্রকের কার্যালয়ে ৩৪৭ পদে নিয়োগ ২০২৬",
+      "html_file": "verified_posts/CAG_Job_Circular_2026.html",
+      "labels": ["All Jobs", "Govt Jobs", "job", "all", "pdf", "pdf Zone"],
+      "banner_url": "https://iili.io/n687nOx.png",
+      "expires_on": "2026-11-25",
+      "facebook_summary": "📌 দুইটি বিজ্ঞপ্তি: ৩৪১ + ৬টি পদ\n🗓️ আবেদন: ৩–২৫ নভেম্বর ২০২৬\n🔎 পদ ও যোগ্যতা সরকারি PDF-এ মিলিয়ে নিন"
+    },
+    {
+      "id": "dgms_jobs_2026",
+      "title": "সামরিক চিকিৎসা সার্ভিস মহাপরিদপ্তরে ৩০ পদে নিয়োগ ২০২৬",
+      "html_file": "verified_posts/DGMS_Job_Circular_2026.html",
+      "labels": ["All Jobs", "Govt Jobs", "job", "all", "pdf", "pdf Zone"],
+      "banner_url": "https://iili.io/n68YYE7.png",
+      "expires_on": "2026-11-21",
+      "facebook_summary": "📌 ১১টি ক্যাটাগরিতে ৩০টি পদ\n⏳ আবেদন শেষ: ২১ নভেম্বর ২০২৬\n🔎 যোগ্যতা ও ফি সরকারি বিজ্ঞপ্তিতে দেখুন"
+    },
+    {
+      "id": "dhaka_university_jobs_2026",
+      "title": "ঢাকা বিশ্ববিদ্যালয়ের চলমান নিয়োগ বিজ্ঞপ্তি ২০২৬",
+      "html_file": "verified_posts/Dhaka_University_Jobs_2026.html",
+      "labels": ["All Jobs", "Govt Jobs", "job", "all"],
+      "banner_url": "https://iili.io/n68a9GS.png",
+      "expires_on": "2026-11-14",
+      "facebook_summary": "📌 সরকারি Job Portal-এ ১০টি বিজ্ঞপ্তি, মোট ১১টি শূন্যপদ\n⏳ শেষ তারিখ: ১৫–২৯ নভেম্বর ২০২৬\nℹ️ আবেদনপদ্ধতি পদভেদে অনলাইন/অফলাইন"
+    },
+    {
+      "id": "dhaka_board_ssc_scholarship_2026",
+      "title": "ঢাকা শিক্ষা বোর্ডের এসএসসি বৃত্তির তালিকা ২০২৬ প্রকাশ",
+      "html_file": "verified_posts/Dhaka_Board_SSC_Scholarship_2026.html",
+      "labels": ["SSC", "Edcation", "Result", "exam result", "pdf", "pdf Zone"],
+      "banner_url": "https://iili.io/n68cNea.png",
+      "facebook_summary": "📄 ঢাকা বোর্ডের সরকারি PDF-এ SSC 2026 শিক্ষাবৃত্তির তালিকা\n🔎 এই লিংকটি শুধু ঢাকা শিক্ষা বোর্ডের জন্য\nℹ️ অন্য বোর্ডের তালিকা আলাদা করে দেখুন"
+    }
+  ]
+}
