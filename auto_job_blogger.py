@@ -14,6 +14,7 @@ import time
 import json
 import base64
 import urllib.request
+import urllib.error
 import urllib.parse
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -1632,9 +1633,32 @@ def get_blogger_access_token() -> str:
     if BLOGGER_REFRESH_TOKEN and BLOGGER_REFRESH_TOKEN.strip() not in candidate_tokens:
         candidate_tokens.append(BLOGGER_REFRESH_TOKEN.strip())
 
-    for rt in candidate_tokens:
-        # ১. প্রথমে কাস্টম OAuth Client দিয়ে চেষ্টা করবে (যদি ১//০৪ না হয়)
-        if not rt.startswith("1//04") and BLOGGER_CLIENT_ID and BLOGGER_CLIENT_SECRET:
+    if not candidate_tokens:
+        raise RuntimeError("Failed to obtain Blogger access_token: BLOGGER_REFRESH_TOKEN is not configured.")
+
+    refresh_errors = []
+
+    def safe_oauth_error(exc: urllib.error.HTTPError, service: str) -> str:
+        """Return a short OAuth error summary without exposing credentials."""
+        code = "HTTPError"
+        description = ""
+        try:
+            payload = json.loads(exc.read().decode("utf-8", errors="replace"))
+            if isinstance(payload, dict):
+                code = str(payload.get("error") or code)
+                description = str(payload.get("error_description") or "")
+        except Exception:
+            pass
+        detail = code
+        if description:
+            detail += ": " + description[:180]
+        return f"{service}: HTTP {exc.code} ({detail})"
+
+    for token_number, rt in enumerate(candidate_tokens, start=1):
+        # Always try Google's official token endpoint with the configured OAuth
+        # client first. Refresh tokens beginning with "1//04" can also belong to
+        # a custom client, so their prefix must not bypass this standard flow.
+        if BLOGGER_CLIENT_ID and BLOGGER_CLIENT_SECRET:
             try:
                 token_url = "https://oauth2.googleapis.com/token"
                 payload = urllib.parse.urlencode({
@@ -1649,10 +1673,23 @@ def get_blogger_access_token() -> str:
                 if data.get("access_token"):
                     _CACHED_ACCESS_TOKEN = data["access_token"]
                     return _CACHED_ACCESS_TOKEN
-            except Exception:
-                pass
+                oauth_error = data.get("error") or data.get("error_description")
+                refresh_errors.append(
+                    f"Google token endpoint (token {token_number}): "
+                    + (str(oauth_error)[:180] if oauth_error else "no access_token returned")
+                )
+            except urllib.error.HTTPError as exc:
+                refresh_errors.append(safe_oauth_error(exc, f"Google token endpoint (token {token_number})"))
+            except Exception as exc:
+                refresh_errors.append(
+                    f"Google token endpoint (token {token_number}): {type(exc).__name__}"
+                )
+        else:
+            refresh_errors.append(
+                "Google token endpoint skipped: BLOGGER_CLIENT_ID or BLOGGER_CLIENT_SECRET is missing"
+            )
 
-        # ২. OAuth Playground Refresh Endpoint দিয়ে চেষ্টা করবে
+        # Fallback for tokens issued through the OAuth Playground.
         try:
             pg_body = json.dumps({
                 "token_uri": "https://oauth2.googleapis.com/token",
@@ -1669,11 +1706,22 @@ def get_blogger_access_token() -> str:
             if pg_data.get("access_token"):
                 _CACHED_ACCESS_TOKEN = pg_data["access_token"]
                 return _CACHED_ACCESS_TOKEN
-        except Exception:
-            pass
+            oauth_error = pg_data.get("error") or pg_data.get("error_description")
+            refresh_errors.append(
+                f"OAuth Playground endpoint (token {token_number}): "
+                + (str(oauth_error)[:180] if oauth_error else "no access_token returned")
+            )
+        except urllib.error.HTTPError as exc:
+            refresh_errors.append(safe_oauth_error(exc, f"OAuth Playground endpoint (token {token_number})"))
+        except Exception as exc:
+            refresh_errors.append(
+                f"OAuth Playground endpoint (token {token_number}): {type(exc).__name__}"
+            )
 
-    raise RuntimeError("Failed to obtain Blogger access_token from all configured refresh tokens.")
-
+    details = "; ".join(refresh_errors)
+    if details:
+        details = " Details: " + details[:900]
+    raise RuntimeError("Failed to obtain Blogger access_token from all configured refresh tokens." + details)
 
 def ping_google_websub_hub():
     hub_url = "https://pubsubhubbub.appspot.com/"
