@@ -36,7 +36,7 @@ jobs:
           BLOGGER_IS_DRAFT: "false"
           FB_PAGE_ID: "104790438452242"
           FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          DRIVE_QUEUE_URL: "https://drive.google.com/uc?export=download&id=1QCEUlVhUBA93J0NsrareGY5OW3vI_axb"
+          DRIVE_QUEUE_URL: "https://drive.google.com/uc?export=download&id=1aDo0MOhz3cGt3o4Rl7zNG6UPKVLf_vpe"
           MAX_QUEUE_POSTS_PER_RUN: ${{ github.event_name == 'workflow_dispatch' && '10' || '1' }}
           IGNORE_COOLDOWN: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
         run: python3 publish_verified_post_queue.py
