@@ -3188,6 +3188,14 @@ def publish_friday_saptahik_job_papers(posted_urls: list) -> bool:
 
 
 def main():
+    # Fail visibly before scraping when Blogger OAuth is unusable; avoid green runs with no post.
+    if BLOGGER_BLOG_ID:
+        try:
+            get_blogger_access_token()
+        except Exception as exc:
+            print(f"[FATAL] Blogger OAuth preflight failed; no post was published: {exc}")
+            raise
+
     posted_urls = load_posted_jobs()
     if not BLOGGER_BLOG_ID:
         publish_next_live_job_circular(posted_urls)
