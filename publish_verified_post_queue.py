@@ -28,10 +28,10 @@ QUEUE_PATH = ROOT / "verified_post_queue.json"
 STATE_PATH = ROOT / "verified_post_state.json"
 STATE_TMP = ROOT / "verified_post_state.json.tmp"
 BD_TZ = timezone(timedelta(hours=6))
-MIN_POST_GAP = timedelta(minutes=30)
+MIN_POST_GAP = timedelta(minutes=2)
 
 DEFAULT_DRIVE_QUEUE_URL = (
-    "https://drive.google.com/uc?export=download&id=1DMGaDPWncdRpjH53SJGnEHkYCoEV376O"
+    "https://drive.google.com/uc?export=download&id=1kePEcfzrmtt4MYZ5YWKpxObJ9_lzbCXB"
 )
 
 
@@ -107,8 +107,8 @@ def get_public_latest_post_time() -> tuple[datetime | None, set[str]]:
         return None, set()
 
 
-def read_drive_queue(drive_url: str) -> list[dict[str, Any]]:
-    if not drive_url:
+def read_drive_queue(drive_url: str, depth: int = 0) -> list[dict[str, Any]]:
+    if not drive_url or depth > 3:
         return []
     req = urllib.request.Request(
         drive_url,
@@ -120,6 +120,10 @@ def read_drive_queue(drive_url: str) -> list[dict[str, Any]]:
     with urllib.request.urlopen(req, timeout=25) as resp:
         raw = resp.read().decode("utf-8")
     data = json.loads(raw)
+    if isinstance(data, dict) and data.get("queue_url") and "items" not in data:
+        next_url = str(data["queue_url"]).strip()
+        log(f"Following Drive queue pointer -> {next_url}")
+        return read_drive_queue(next_url, depth=depth + 1)
     items = data.get("items", []) if isinstance(data, dict) else []
     if not isinstance(items, list):
         raise ValueError("Remote Drive queue: 'items' must be a list")
@@ -297,7 +301,7 @@ def main() -> int:
     published_any = False
     for idx, c in enumerate(candidates[:max_posts]):
         if idx > 0:
-            time.sleep(2)
+            time.sleep(8)
         state.update({"last_attempt_utc": datetime.now(timezone.utc).isoformat(), "last_attempt_id": c["item_id"]})
         write_state(state)
         log(f"Publishing ({idx + 1}/{min(len(candidates), max_posts)}): {c['title']} [date={c['published_iso'] or 'now'}]")
