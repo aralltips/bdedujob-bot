@@ -1,0 +1,24 @@
+name: Patch 13 Private Job Banners
+
+on:
+  workflow_dispatch:
+
+jobs:
+  patch-banners:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Patch 13 Private Job Post Banners on Blogger
+        env:
+          BLOGGER_BLOG_ID: "3244474783562745180"
+          BLOGGER_CLIENT_ID: ${{ secrets.BLOGGER_CLIENT_ID }}
+          BLOGGER_CLIENT_SECRET: ${{ secrets.BLOGGER_CLIENT_SECRET }}
+          BLOGGER_REFRESH_TOKEN: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
+        run: python3 patch_private_banners.py
