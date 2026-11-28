@@ -1,6 +1,8 @@
 name: Auto Publish BD Job Circulars to Blogger
 
 on:
+  # Queue publication stays on the half-hour schedule; no push trigger, so a
+  # multi-file upload cannot cause several posts to fire in quick succession.
   schedule:
     - cron: '12,42 * * * *'
   workflow_dispatch:
@@ -11,10 +13,6 @@ permissions:
 jobs:
   auto-post-jobs:
     runs-on: ubuntu-latest
-    env:
-      # শুধু আপনার দেওয়া লিংকগুলোই প্রকাশ করতে 'false' রাখুন।
-      # পুরনো অটো-স্ক্র্যাপারও চালাতে চাইলে 'true' করুন।
-      ENABLE_AUTO_SCRAPER: "false"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -26,7 +24,32 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Publish curated posts from Google Drive / local queue
+      - name: Sync Already Published Jobs
+        run: |
+          python3 -c '
+          import json, os
+          f = "posted_jobs.json"
+          data = json.load(open(f)) if os.path.exists(f) else []
+          for u in [
+              "https://bdgovtjob.net/bpatc-job-circular/",
+              "https://bdgovtjob.net/saptahik-chakrir-khobor/",
+              "https://bdgovtjob.net/bangladesh-krira-shikkha-protishtan-bksp-job-circular/",
+              "https://bdgovtjob.net/rajshahi-university-job-circular/",
+              "https://bdgovtjob.net/nstu-job-circular/",
+              "https://bdgovtjob.net/meherpur-university-job-circular/",
+              "https://bdgovtjob.net/ad-din-foundation-job-circular/",
+              "https://bdgovtjob.net/popular-pharmaceuticals-ltd-job-circular/",
+              "https://bdgovtjob.net/drug-international-limited-job-circular/",
+              "https://bdgovtjob.net/bank-asia-limited-job-circular/",
+              "https://bdgovtjob.net/bina-written-exam-result-notice/",
+              "https://bdgovtjob.net/bpsc-written-examination-notice/"
+          ]:
+              if u not in data:
+                  data.append(u)
+          json.dump(data, open(f, "w"), indent=2)
+          '
+
+      - name: Publish one verified queued post
         id: verified_queue
         env:
           BLOGGER_BLOG_ID: "3244474783562745180"
@@ -36,13 +59,10 @@ jobs:
           BLOGGER_IS_DRAFT: "false"
           FB_PAGE_ID: "104790438452242"
           FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          DRIVE_QUEUE_URL: "https://drive.google.com/uc?export=download&id=1aDo0MOhz3cGt3o4Rl7zNG6UPKVLf_vpe"
-          MAX_QUEUE_POSTS_PER_RUN: ${{ github.event_name == 'workflow_dispatch' && '10' || '1' }}
-          IGNORE_COOLDOWN: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
         run: python3 publish_verified_post_queue.py
 
       - name: Run Auto Job Circular Scraper & Blogger Publisher
-        if: env.ENABLE_AUTO_SCRAPER == 'true' && steps.verified_queue.outputs.slot_consumed != 'true'
+        if: steps.verified_queue.outputs.slot_consumed != 'true'
         env:
           BLOGGER_BLOG_ID: "3244474783562745180"
           BLOGGER_CLIENT_ID: ${{ secrets.BLOGGER_CLIENT_ID }}
@@ -56,7 +76,7 @@ jobs:
         run: |
           python3 -c 'import auto_job_blogger as bot; bot.MAX_POSTS_PER_RUN = 1; bot.main()'
 
-      - name: Save Posted Jobs & Queue State
+      - name: Save Posted Jobs & Generated Banners
         run: |
           git config user.name "bdedujob-bot"
           git config user.email "bot@bdedujob.blogspot.com"
